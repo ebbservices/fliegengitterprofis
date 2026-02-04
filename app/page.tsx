@@ -9,46 +9,154 @@ export default function Home() {
       <Header />
       
       <main className="pt-20">
-        <section id="start" className="relative bg-gradient-to-br from-[#FF8C42] to-[#ff6b1a] text-white py-32 px-4 overflow-hidden">
-          <div className="absolute inset-0 opacity-20">
+        {/* Hero Section */}
+        <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+          <div className="absolute inset-0 opacity-30">
             <Image 
               src="/images/hero-image.jpg" 
-              alt="Background" 
+              alt="Fliegengitter Profis" 
               fill
               className="object-cover"
               priority
             />
           </div>
-          <div className="container mx-auto text-center relative z-10">
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 leading-tight">
-              Endlich Schluss mit lästigen Insekten<br />in Ihren eigenen vier Wänden
+          
+          <div className="container mx-auto px-6 relative z-10 text-white text-center py-20">
+            {/* Trust Badge */}
+            <div className="inline-flex items-center gap-3 bg-white/10 backdrop-blur-md px-6 py-3 rounded-full mb-8 border border-white/20">
+              <div className="flex gap-1">
+                {[1,2,3,4,5].map(i => (
+                  <svg key={i} className="w-5 h-5 fill-amber-400" viewBox="0 0 20 20">
+                    <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/>
+                  </svg>
+                ))}
+              </div>
+              <span className="text-sm font-semibold">Über 175 zufriedene Kunden</span>
+            </div>
+            
+            <h1 className="text-5xl md:text-7xl font-bold mb-6 leading-tight max-w-5xl mx-auto">
+              Endlich Schluss mit lästigen{' '}
+              <span className="bg-gradient-to-r from-orange-400 to-orange-600 bg-clip-text text-transparent">
+                Insekten
+              </span>
             </h1>
-            <p className="text-xl md:text-2xl mb-8 max-w-3xl mx-auto">
-              Unsere Premium-Insektenschutzgitter bieten effektiven Schutz vor lästigen Insekten wie Insekten und Fliegen, ohne die Luftzirkulation im Raum zu beeinträchtigen.
+            
+            <p className="text-xl md:text-2xl mb-12 max-w-3xl mx-auto text-slate-300 leading-relaxed">
+              Premium Insektenschutzgitter nach Maß – Perfekter Schutz für Ihr Zuhause
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            
+            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               <Link 
-                href="#kontakt" 
-                className="bg-white text-[#FF8C42] px-8 py-4 rounded-full font-semibold text-lg hover:bg-[#F5F5F5] transition-colors"
+                href="/kontakt" 
+                className="inline-flex items-center gap-2 bg-gradient-to-r from-orange-500 to-orange-600 text-white px-8 py-4 rounded-xl font-bold text-lg hover:from-orange-600 hover:to-orange-700 transition-all shadow-2xl hover:shadow-orange-500/50 hover:scale-105"
               >
-                Jetzt anfragen!
+                Kostenlose Beratung
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
               </Link>
               <Link 
-                href="#insektenschutz" 
-                className="bg-transparent border-2 border-white text-white px-8 py-4 rounded-full font-semibold text-lg hover:bg-white hover:text-[#FF8C42] transition-colors"
+                href="/leistungen" 
+                className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm border-2 border-white/30 text-white px-8 py-4 rounded-xl font-bold text-lg hover:bg-white hover:text-slate-900 transition-all"
               >
-                Mehr Informationen
+                Unsere Leistungen
               </Link>
             </div>
-            <div className="mt-12">
-              <Link 
-                href="https://g.page/r/CXx5lQn7kYL_EBE/review" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="inline-block text-white hover:text-[#F5F5F5] transition-colors"
-              >
-                ⭐ Über 175 Bewertungen
-              </Link>
+          </div>
+          
+          {/* Scroll Indicator */}
+          <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 animate-bounce">
+            <svg className="w-6 h-6 text-white/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+            </svg>
+          </div>
+        </section>
+
+        <section className="py-24 px-4 bg-white">
+          <div className="container mx-auto">
+            <div className="text-center mb-16">
+              <h2 className="text-4xl md:text-5xl font-bold text-[#2C2C2C] mb-4">
+                Warum Die Fliegengitter Profis?
+              </h2>
+              <p className="text-xl text-[#6B6B6B] max-w-3xl mx-auto">
+                Qualität, Service und Expertise - Ihr Partner für maßgeschneiderten Insektenschutz
+              </p>
+            </div>
+
+            <div className="grid md:grid-cols-3 gap-8 mb-16">
+              <div className="bg-[#F5F5F5] p-8 rounded-2xl hover:shadow-xl transition-shadow">
+                <div className="bg-[#FF8C42] w-16 h-16 rounded-full flex items-center justify-center mb-6 mx-auto">
+                  <span className="text-3xl text-white">✓</span>
+                </div>
+                <h3 className="text-2xl font-bold text-[#2C2C2C] mb-4 text-center">Premium Qualität</h3>
+                <p className="text-[#6B6B6B] text-center">
+                  Hochwertige Materialien aus robustem Aluminium für langlebigen Schutz
+                </p>
+              </div>
+
+              <div className="bg-[#F5F5F5] p-8 rounded-2xl hover:shadow-xl transition-shadow">
+                <div className="bg-[#FF8C42] w-16 h-16 rounded-full flex items-center justify-center mb-6 mx-auto">
+                  <span className="text-3xl text-white">⚡</span>
+                </div>
+                <h3 className="text-2xl font-bold text-[#2C2C2C] mb-4 text-center">Maßanfertigung</h3>
+                <p className="text-[#6B6B6B] text-center">
+                  Jedes Fliegengitter wird exakt nach Ihren Maßen gefertigt - perfekte Passform garantiert
+                </p>
+              </div>
+
+              <div className="bg-[#F5F5F5] p-8 rounded-2xl hover:shadow-xl transition-shadow">
+                <div className="bg-[#FF8C42] w-16 h-16 rounded-full flex items-center justify-center mb-6 mx-auto">
+                  <span className="text-3xl text-white">🛠️</span>
+                </div>
+                <h3 className="text-2xl font-bold text-[#2C2C2C] mb-4 text-center">Professionelle Montage</h3>
+                <p className="text-[#6B6B6B] text-center">
+                  Inklusive Beratung und fachgerechter Montage durch unsere Experten
+                </p>
+              </div>
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-12 items-center">
+              <div className="relative h-[500px] rounded-2xl overflow-hidden shadow-2xl">
+                <Image 
+                  src="/images/image-2.jpg" 
+                  alt="Premium Insektenschutzgitter" 
+                  fill
+                  className="object-cover"
+                />
+              </div>
+              
+              <div>
+                <h2 className="text-3xl md:text-4xl font-bold text-[#2C2C2C] mb-6">
+                  Premium Insektenschutzgitter
+                </h2>
+                <p className="text-[#6B6B6B] leading-relaxed mb-6 text-lg">
+                  Unsere hochwertigen Fliegengitter nach Maß bestehen aus robustem Aluminium und eignen sich für alle Fenster. Insbesondere für Räume mit 17 mm Rollladen zwischen Fenster und Rollladen.
+                </p>
+                <ul className="space-y-4 mb-8">
+                  <li className="flex items-start gap-3">
+                    <span className="text-[#FF8C42] text-2xl">✓</span>
+                    <span className="text-[#6B6B6B]">Verschiedene Farben erhältlich</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <span className="text-[#FF8C42] text-2xl">✓</span>
+                    <span className="text-[#6B6B6B]">Befestigung durch Schrauben oder praktisches Klicksystem</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <span className="text-[#FF8C42] text-2xl">✓</span>
+                    <span className="text-[#6B6B6B]">Ungehinderte Luftzirkulation</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <span className="text-[#FF8C42] text-2xl">✓</span>
+                    <span className="text-[#6B6B6B]">Schutz vor Pollen, Staub und Allergenen</span>
+                  </li>
+                </ul>
+                <Link 
+                  href="/insektenschutz" 
+                  className="inline-block bg-[#FF8C42] text-white px-8 py-4 rounded-full font-bold hover:bg-[#ff6b1a] transition-colors"
+                >
+                  Mehr erfahren →
+                </Link>
+              </div>
             </div>
           </div>
         </section>

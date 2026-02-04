@@ -29,45 +29,29 @@ export default function Header() {
             ☰
           </button>
 
-          <ul className={`${
-            isMenuOpen ? 'flex' : 'hidden'
-          } lg:flex flex-col lg:flex-row absolute lg:relative top-full left-0 right-0 bg-white lg:bg-transparent shadow-md lg:shadow-none gap-4 lg:gap-8 p-4 lg:p-0`}>
-            <li>
-              <Link href="#start" className="text-[#2C2C2C] hover:text-[#FF8C42] transition-colors">
-                Start
-              </Link>
-            </li>
-            <li>
-              <Link href="#insektenschutz" className="text-[#2C2C2C] hover:text-[#FF8C42] transition-colors">
-                Insektenschutz
-              </Link>
-            </li>
-            <li>
-              <Link href="#leistungen" className="text-[#2C2C2C] hover:text-[#FF8C42] transition-colors">
-                Leistungen
-              </Link>
-            </li>
-            <li>
-              <Link href="#video" className="text-[#2C2C2C] hover:text-[#FF8C42] transition-colors">
-                Video
-              </Link>
-            </li>
-            <li>
-              <Link href="#beispiele" className="text-[#2C2C2C] hover:text-[#FF8C42] transition-colors">
-                Beispiele
-              </Link>
-            </li>
-            <li>
-              <Link href="#kundenstimmen" className="text-[#2C2C2C] hover:text-[#FF8C42] transition-colors">
-                Kundenstimmen
-              </Link>
-            </li>
-            <li>
-              <Link href="#kontakt" className="text-[#2C2C2C] hover:text-[#FF8C42] transition-colors">
-                Kontakt
-              </Link>
-            </li>
-          </ul>
+          <div className={`${isMenuOpen ? 'block' : 'hidden'} lg:flex lg:items-center lg:gap-8 absolute lg:relative top-full left-0 right-0 bg-white lg:bg-transparent shadow-lg lg:shadow-none p-4 lg:p-0`}>
+            <Link href="/" className="block py-2 lg:py-0 text-[#2C2C2C] hover:text-[#FF8C42] transition-colors font-medium">
+              Start
+            </Link>
+            <Link href="/insektenschutz" className="block py-2 lg:py-0 text-[#2C2C2C] hover:text-[#FF8C42] transition-colors font-medium">
+              Insektenschutz
+            </Link>
+            <Link href="/leistungen" className="block py-2 lg:py-0 text-[#2C2C2C] hover:text-[#FF8C42] transition-colors font-medium">
+              Leistungen
+            </Link>
+            <Link href="/video" className="block py-2 lg:py-0 text-[#2C2C2C] hover:text-[#FF8C42] transition-colors font-medium">
+              Video
+            </Link>
+            <Link href="/beispiele" className="block py-2 lg:py-0 text-[#2C2C2C] hover:text-[#FF8C42] transition-colors font-medium">
+              Beispiele
+            </Link>
+            <Link href="/kundenstimmen" className="block py-2 lg:py-0 text-[#2C2C2C] hover:text-[#FF8C42] transition-colors font-medium">
+              Kundenstimmen
+            </Link>
+            <Link href="/kontakt" className="block py-2 lg:py-0 bg-[#FF8C42] text-white px-6 py-2 rounded-full hover:bg-[#ff6b1a] transition-colors font-semibold">
+              Kontakt
+            </Link>
+          </div>
         </nav>
       </div>
     </header>

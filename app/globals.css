@@ -1,28 +1,30 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
-:root {
-  --primary-orange: #FF8C42;
-  --primary-dark: #2C2C2C;
-  --primary-light: #F5F5F5;
-  --secondary-gray: #6B6B6B;
-  --background: #ffffff;
-  --foreground: #2C2C2C;
+@layer theme {
+  :root {
+    --color-orange-500: #ff8c42;
+    --color-orange-600: #ff6b1a;
+    --color-slate-900: #0f172a;
+    --color-slate-800: #1e293b;
+    --color-slate-300: #cbd5e1;
+    --font-sans: 'Open Sans', 'Helvetica Neue', Arial, sans-serif;
+  }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: 'Open Sans', 'Helvetica Neue', Arial, sans-serif;
-}
-
-html {
-  scroll-behavior: smooth;
-}
-
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
+@layer base {
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+  
+  html {
+    scroll-behavior: smooth;
+  }
+  
+  body {
+    font-family: var(--font-sans);
+    background: white;
+    color: #1e293b;
+  }
 }
