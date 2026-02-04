@@ -1,148 +1,76 @@
-# Medusa Backend Setup
+<p align="center">
+  <a href="https://www.medusajs.com">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://user-images.githubusercontent.com/59018053/229103275-b5e482bb-4601-46e6-8142-244f531cebdb.svg">
+    <source media="(prefers-color-scheme: light)" srcset="https://user-images.githubusercontent.com/59018053/229103726-e5b529a3-9b3f-4970-8a1f-c6af37f087bf.svg">
+    <img alt="Medusa logo" src="https://user-images.githubusercontent.com/59018053/229103726-e5b529a3-9b3f-4970-8a1f-c6af37f087bf.svg">
+    </picture>
+  </a>
+</p>
+<h1 align="center">
+  Medusa
+</h1>
 
-## Übersicht
+<h4 align="center">
+  <a href="https://docs.medusajs.com">Documentation</a> |
+  <a href="https://www.medusajs.com">Website</a>
+</h4>
 
-Dieses Verzeichnis enthält die Backend-Konfiguration für den Medusa.js E-Commerce Server.
+<p align="center">
+  Building blocks for digital commerce
+</p>
+<p align="center">
+  <a href="https://github.com/medusajs/medusa/blob/master/CONTRIBUTING.md">
+    <img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat" alt="PRs welcome!" />
+  </a>
+    <a href="https://www.producthunt.com/posts/medusa"><img src="https://img.shields.io/badge/Product%20Hunt-%231%20Product%20of%20the%20Day-%23DA552E" alt="Product Hunt"></a>
+  <a href="https://discord.gg/xpCwq3Kfn8">
+    <img src="https://img.shields.io/badge/chat-on%20discord-7289DA.svg" alt="Discord Chat" />
+  </a>
+  <a href="https://twitter.com/intent/follow?screen_name=medusajs">
+    <img src="https://img.shields.io/twitter/follow/medusajs.svg?label=Follow%20@medusajs" alt="Follow @medusajs" />
+  </a>
+</p>
 
-## Infrastruktur
+## Compatibility
 
-### PostgreSQL
-- **Server:** 10.0.0.6
-- **Port:** 5432
-- **User:** medusa_user
-- **Dev-DB:** diefliegengitterprofis_dev
-- **Prod-DB:** diefliegengitterprofis_prod
+This starter is compatible with versions >= 2 of `@medusajs/medusa`. 
 
-### Redis
-- **Service:** redis.default.svc.cluster.local
-- **Port:** 6379
-- **Dev-DB:** 0
-- **Prod-DB:** 1
+## Getting Started
 
-### Kubernetes Nodes
-- k8s-node-1: 10.0.0.3
-- k8s-node-2: 10.0.0.4
-- k8s-node-3: 10.0.0.5
+Visit the [Quickstart Guide](https://docs.medusajs.com/learn/installation) to set up a server.
 
-## Setup-Schritte
+Visit the [Docs](https://docs.medusajs.com/learn/installation#get-started) to learn more about our system requirements.
 
-### 1. PostgreSQL Datenbanken einrichten
+## What is Medusa
 
-**Option A: Mit PowerShell-Script (empfohlen)**
-```powershell
-cd backend
-.\setup-postgres.ps1
-```
+Medusa is a set of commerce modules and tools that allow you to build rich, reliable, and performant commerce applications without reinventing core commerce logic. The modules can be customized and used to build advanced ecommerce stores, marketplaces, or any product that needs foundational commerce primitives. All modules are open-source and freely available on npm.
 
-**Option B: Manuell mit psql**
-```bash
-psql -h 10.0.0.6 -U postgres -d postgres -f setup-postgres.sql
-```
+Learn more about [Medusa’s architecture](https://docs.medusajs.com/learn/introduction/architecture) and [commerce modules](https://docs.medusajs.com/learn/fundamentals/modules/commerce-modules) in the Docs.
 
-Das Script erstellt:
-- User `medusa_user` mit Passwort (bitte ändern!)
-- Datenbank `diefliegengitterprofis_dev`
-- Datenbank `diefliegengitterprofis_prod`
-- Alle notwendigen Berechtigungen
+## Build with AI Agents
 
-### 2. Redis in Kubernetes deployen
+### Claude Code Plugin
 
-```bash
-kubectl apply -f ../k8s/redis-deployment.yaml
-```
+If you use AI agents like Claude Code, check out the [medusa-dev Claude Code plugin](https://github.com/medusajs/medusa-claude-plugins).
 
-Dies erstellt:
-- PersistentVolumeClaim für Redis-Daten (5GB)
-- ConfigMap mit Redis-Konfiguration
-- Deployment mit 1 Replica
-- Service für Cluster-internen Zugriff
+### Other Agents
 
-**Redis-Verbindung prüfen:**
-```bash
-kubectl exec -it deployment/redis -- redis-cli ping
-# Sollte "PONG" zurückgeben
-```
+If you use AI agents other than Claude Code, copy the [skills directory](https://github.com/medusajs/medusa-claude-plugins/tree/main/plugins/medusa-dev/skills) into your agent's relevant `skills` directory.
 
-### 3. Medusa Backend installieren (nächster Schritt)
+### MCP Server
 
-```bash
-# Im backend-Verzeichnis
-npx create-medusa-app@latest
-```
+You can also add the MCP server `https://docs.medusajs.com/mcp` to your AI agents to answer questions related to Medusa. The `medusa-dev` Claude Code plugin includes this MCP server by default.
 
-## Connection Strings
+## Community & Contributions
 
-### Development
-```
-DATABASE_URL=postgresql://medusa_user:PASSWORD@10.0.0.6:5432/diefliegengitterprofis_dev
-REDIS_URL=redis://redis.default.svc.cluster.local:6379/0
-```
+The community and core team are available in [GitHub Discussions](https://github.com/medusajs/medusa/discussions), where you can ask for support, discuss roadmap, and share ideas.
 
-### Production
-```
-DATABASE_URL=postgresql://medusa_user:PASSWORD@10.0.0.6:5432/diefliegengitterprofis_prod
-REDIS_URL=redis://redis.default.svc.cluster.local:6379/1
-```
+Join our [Discord server](https://discord.com/invite/medusajs) to meet other community members.
 
-## Zugriff von lokal (über VPN)
+## Other channels
 
-### PostgreSQL
-```bash
-psql -h 10.0.0.6 -U medusa_user -d diefliegengitterprofis_dev
-```
-
-### Redis (über Port-Forward)
-```bash
-kubectl port-forward service/redis 6379:6379
-redis-cli -h localhost -p 6379
-```
-
-## Sicherheit
-
-⚠️ **WICHTIG:**
-1. Ändere das Passwort für `medusa_user` in `setup-postgres.sql`
-2. Verwende Umgebungsvariablen für Passwörter (niemals im Code!)
-3. Für Produktion: Aktiviere SSL für PostgreSQL
-4. Für Produktion: Aktiviere Redis-Authentifizierung
-
-## Nächste Schritte
-
-- [ ] PostgreSQL Setup ausführen
-- [ ] Redis deployen
-- [ ] Medusa Backend installieren
-- [ ] Medusa mit DBs verbinden
-- [ ] Admin-Panel konfigurieren
-- [ ] Erste Produkte anlegen
-
-## Troubleshooting
-
-### PostgreSQL-Verbindung schlägt fehl
-```bash
-# Prüfe ob PostgreSQL erreichbar ist
-telnet 10.0.0.6 5432
-
-# Prüfe PostgreSQL-Logs
-# (auf dem PostgreSQL-Server)
-tail -f /var/log/postgresql/postgresql-*.log
-```
-
-### Redis-Verbindung schlägt fehl
-```bash
-# Prüfe Redis-Status
-kubectl get pods -l app=redis
-kubectl logs deployment/redis
-
-# Prüfe Service
-kubectl get svc redis
-```
-
-### Redis-Datenbanken testen
-```bash
-# Dev-DB (0)
-kubectl exec -it deployment/redis -- redis-cli -n 0 SET test "dev"
-kubectl exec -it deployment/redis -- redis-cli -n 0 GET test
-
-# Prod-DB (1)
-kubectl exec -it deployment/redis -- redis-cli -n 1 SET test "prod"
-kubectl exec -it deployment/redis -- redis-cli -n 1 GET test
-```
+- [GitHub Issues](https://github.com/medusajs/medusa/issues)
+- [Twitter](https://twitter.com/medusajs)
+- [LinkedIn](https://www.linkedin.com/company/medusajs)
+- [Medusa Blog](https://medusajs.com/blog/)
