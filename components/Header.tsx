@@ -8,15 +8,15 @@ export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   return (
-    <header className="fixed top-0 left-0 right-0 bg-white/95 backdrop-blur-md shadow-lg z-50 border-b border-gray-100">
-      <div className="container mx-auto px-6">
+    <header className="fixed top-0 left-0 right-0 bg-white/80 backdrop-blur-md shadow-sm z-50">
+      <div className="container mx-auto px-4 md:px-6">
         <nav className="flex items-center justify-between py-3">
           <Link href="/" className="flex items-center transition-transform hover:scale-105">
             <Image 
               src="/images/logo.svg" 
               alt="Die Fliegengitter Profis" 
-              width={140} 
-              height={42}
+              width={100} 
+              height={30}
               priority
               className="h-auto"
             />
@@ -36,7 +36,7 @@ export default function Header() {
             </svg>
           </button>
 
-          <div className={`${isMenuOpen ? 'block' : 'hidden'} lg:flex lg:items-center lg:gap-6 absolute lg:relative top-full left-0 right-0 bg-white/95 backdrop-blur-md lg:bg-transparent shadow-lg lg:shadow-none p-6 lg:p-0 border-t lg:border-0 border-gray-100`}>
+          <div className={`${isMenuOpen ? 'block' : 'hidden'} lg:flex lg:items-center lg:gap-5 absolute lg:relative top-full left-0 right-0 bg-white/95 backdrop-blur-md lg:bg-transparent shadow-lg lg:shadow-none p-4 lg:p-0 border-t lg:border-0 border-gray-100`}>
             <Link href="/" className="block py-3 lg:py-0 text-slate-700 hover:text-orange-500 transition-all font-medium text-sm relative group">
               Start
               <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-orange-500 group-hover:w-full transition-all duration-300"></span>

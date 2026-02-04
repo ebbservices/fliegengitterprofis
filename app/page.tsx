@@ -8,9 +8,9 @@ export default function Home() {
     <>
       <Header />
       
-      <main className="pt-20">
-        {/* Hero Section */}
-        <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+      <main className="pt-14">
+        {/* Hero Section - Kompakt und Mobile-optimiert */}
+        <section className="relative h-[70vh] md:h-[80vh] flex items-center justify-center overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
           <div className="absolute inset-0 opacity-30">
             <Image 
               src="/images/hero-image.jpg" 
@@ -21,51 +21,51 @@ export default function Home() {
             />
           </div>
           
-          <div className="container mx-auto px-6 relative z-10 text-white text-center py-20">
+          <div className="container mx-auto px-4 md:px-6 relative z-10 text-white text-center py-8 md:py-12">
             {/* Trust Badge */}
-            <div className="inline-flex items-center gap-3 bg-white/10 backdrop-blur-md px-6 py-3 rounded-full mb-8 border border-white/20">
-              <div className="flex gap-1">
+            <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md px-4 py-2 rounded-full mb-6 border border-white/20">
+              <div className="flex gap-0.5">
                 {[1,2,3,4,5].map(i => (
-                  <svg key={i} className="w-5 h-5 fill-amber-400" viewBox="0 0 20 20">
+                  <svg key={i} className="w-4 h-4 fill-amber-400" viewBox="0 0 20 20">
                     <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/>
                   </svg>
                 ))}
               </div>
-              <span className="text-sm font-semibold">Über 175 zufriedene Kunden</span>
+              <span className="text-xs md:text-sm font-semibold">Über 175 Kunden</span>
             </div>
             
-            <h1 className="text-5xl md:text-7xl font-bold mb-6 leading-tight max-w-5xl mx-auto">
+            <h1 className="text-3xl sm:text-4xl md:text-6xl font-bold mb-4 md:mb-6 leading-tight max-w-4xl mx-auto">
               Endlich Schluss mit lästigen{' '}
               <span className="bg-gradient-to-r from-orange-400 to-orange-600 bg-clip-text text-transparent">
                 Insekten
               </span>
             </h1>
             
-            <p className="text-xl md:text-2xl mb-12 max-w-3xl mx-auto text-slate-300 leading-relaxed">
+            <p className="text-base md:text-xl mb-8 md:mb-10 max-w-2xl mx-auto text-slate-300 leading-relaxed px-4">
               Premium Insektenschutzgitter nach Maß – Perfekter Schutz für Ihr Zuhause
             </p>
             
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+            <div className="flex flex-col sm:flex-row gap-3 justify-center items-center px-4">
               <Link 
                 href="/kontakt" 
-                className="inline-flex items-center gap-2 bg-gradient-to-r from-orange-500 to-orange-600 text-white px-8 py-4 rounded-xl font-bold text-lg hover:from-orange-600 hover:to-orange-700 transition-all shadow-2xl hover:shadow-orange-500/50 hover:scale-105"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-gradient-to-r from-orange-500 to-orange-600 text-white px-6 md:px-8 py-3 md:py-4 rounded-xl font-bold text-sm md:text-base hover:from-orange-600 hover:to-orange-700 transition-all shadow-2xl hover:shadow-orange-500/50 hover:scale-105"
               >
                 Kostenlose Beratung
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                 </svg>
               </Link>
               <Link 
                 href="/leistungen" 
-                className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm border-2 border-white/30 text-white px-8 py-4 rounded-xl font-bold text-lg hover:bg-white hover:text-slate-900 transition-all"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-white/10 backdrop-blur-sm border-2 border-white/30 text-white px-6 md:px-8 py-3 md:py-4 rounded-xl font-bold text-sm md:text-base hover:bg-white hover:text-slate-900 transition-all"
               >
                 Unsere Leistungen
               </Link>
             </div>
           </div>
           
-          {/* Scroll Indicator */}
-          <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 animate-bounce">
+          {/* Scroll Indicator - nur auf Desktop */}
+          <div className="hidden md:block absolute bottom-8 left-1/2 transform -translate-x-1/2 animate-bounce">
             <svg className="w-6 h-6 text-white/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
             </svg>
