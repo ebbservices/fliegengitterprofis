@@ -68,6 +68,12 @@ export default function WarenkorbPage() {
       <main className="pt-20">
         <section className="py-12 px-4 bg-gradient-to-b from-slate-900 to-slate-800 text-white">
           <div className="container mx-auto">
+            <Link href="/shop" className="inline-flex items-center gap-2 text-slate-300 hover:text-white mb-4 transition-colors">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+              Zurück zum Shop
+            </Link>
             <h1 className="text-4xl md:text-5xl font-bold mb-4">
               Warenkorb
             </h1>
