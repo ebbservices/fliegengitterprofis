@@ -2,6 +2,7 @@
 
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import AddToCartModal from '@/components/AddToCartModal';
 import { useState } from 'react';
 import Link from 'next/link';
 
@@ -9,6 +10,7 @@ export default function LichtschachtKonfigurator() {
   const [height, setHeight] = useState(800);
   const [width, setWidth] = useState(1000);
   const [color, setColor] = useState('verzinkt');
+  const [showModal, setShowModal] = useState(false);
 
   const colors = [
     { id: 'verzinkt', name: 'Verzinkt', description: 'Klassisch, rostfrei', price: 0 },
@@ -38,7 +40,8 @@ export default function LichtschachtKonfigurator() {
     cart.push(item);
     localStorage.setItem('cart', JSON.stringify(cart));
     
-    alert('Produkt wurde zum Warenkorb hinzugefügt!');
+    window.dispatchEvent(new Event('cartUpdated'));
+    setShowModal(true);
   };
 
   return (
@@ -209,6 +212,11 @@ export default function LichtschachtKonfigurator() {
       </main>
 
       <Footer />
+      <AddToCartModal 
+        isOpen={showModal}
+        onClose={() => setShowModal(false)}
+        productName="Lichtschachtabdeckung nach Maß"
+      />
     </>
   );
 }

@@ -2,6 +2,7 @@
 
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import AddToCartModal from '@/components/AddToCartModal';
 import { useState } from 'react';
 import Link from 'next/link';
 
@@ -13,6 +14,7 @@ export default function FliegengitterKonfigurator() {
   const [useRal, setUseRal] = useState(false);
   const [frameType, setFrameType] = useState('aluminium');
   const [meshType, setMeshType] = useState('standard');
+  const [showModal, setShowModal] = useState(false);
 
   const standardColors = [
     { id: 'weiss', name: 'Weiß (RAL 9016)', price: 0 },
@@ -59,7 +61,8 @@ export default function FliegengitterKonfigurator() {
     cart.push(item);
     localStorage.setItem('cart', JSON.stringify(cart));
     
-    alert('Produkt wurde zum Warenkorb hinzugefügt!');
+    window.dispatchEvent(new Event('cartUpdated'));
+    setShowModal(true);
   };
 
   return (
@@ -309,6 +312,11 @@ export default function FliegengitterKonfigurator() {
       </main>
 
       <Footer />
+      <AddToCartModal 
+        isOpen={showModal}
+        onClose={() => setShowModal(false)}
+        productName="Fliegengitter nach Maß"
+      />
     </>
   );
 }

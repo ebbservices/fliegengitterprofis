@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: fliegengitter-shop
-        image: registry.mobatix.de/fliegengitter-shop:1.0.2
+        image: registry.mobatix.de/fliegengitter-shop:1.0.3
         ports:
         - containerPort: 3000
         env:
@@ -81,6 +81,7 @@ spec:
             name: fliegengitter-shop
             port:
               number: 80
+
 
 
 

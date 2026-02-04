@@ -2,6 +2,7 @@
 
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import AddToCartModal from '@/components/AddToCartModal';
 import { useState } from 'react';
 import Link from 'next/link';
 
@@ -9,6 +10,7 @@ export default function PlisseeKonfigurator() {
   const [height, setHeight] = useState(1000);
   const [width, setWidth] = useState(1200);
   const [option, setOption] = useState('sonnenschutz');
+  const [showModal, setShowModal] = useState(false);
 
   const options = [
     { id: 'sonnenschutz', name: 'Sonnenschutz', description: 'Lichtdurchlässig, schützt vor Sonne', price: 0 },
@@ -38,7 +40,8 @@ export default function PlisseeKonfigurator() {
     cart.push(item);
     localStorage.setItem('cart', JSON.stringify(cart));
     
-    alert('Produkt wurde zum Warenkorb hinzugefügt!');
+    window.dispatchEvent(new Event('cartUpdated'));
+    setShowModal(true);
   };
 
   return (
@@ -195,6 +198,11 @@ export default function PlisseeKonfigurator() {
       </main>
 
       <Footer />
+      <AddToCartModal 
+        isOpen={showModal}
+        onClose={() => setShowModal(false)}
+        productName="Plissee nach Maß"
+      />
     </>
   );
 }
