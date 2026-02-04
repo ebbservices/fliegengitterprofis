@@ -8,7 +8,7 @@ export default function Home() {
     <>
       <Header />
       
-      <main className="pt-14">
+      <main className="pt-16">
         {/* Hero Section - Kompakt und Mobile-optimiert */}
         <section id="start" className="relative h-[70vh] md:h-[80vh] flex items-center justify-center overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
           <div className="absolute inset-0 opacity-30">
