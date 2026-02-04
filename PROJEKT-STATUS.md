@@ -101,9 +101,9 @@
 ### 1. E-Commerce Backend (Medusa.js Integration)
 
 #### Medusa Setup
+- [x] PostgreSQL Datenbank einrichten (Setup-Scripte erstellt)
+- [x] Redis für Caching einrichten (K8s Deployment erstellt)
 - [ ] Medusa.js Backend installieren und konfigurieren
-- [ ] PostgreSQL Datenbank einrichten
-- [ ] Redis für Caching einrichten
 - [ ] Medusa Admin-Panel aufsetzen
 
 #### Produktverwaltung
@@ -229,11 +229,15 @@
 - **Sprache:** TypeScript
 - **State Management:** React Hooks + LocalStorage
 
-### Backend (geplant)
+### Backend (in Vorbereitung)
 - **E-Commerce:** Medusa.js
-- **Datenbank:** PostgreSQL
-- **Cache:** Redis
-- **Storage:** S3-kompatibel für Bilder
+- **Datenbank:** PostgreSQL (10.0.0.6)
+  - Dev-DB: diefliegengitterprofis_dev
+  - Prod-DB: diefliegengitterprofis_prod
+- **Cache:** Redis (Kubernetes)
+  - Dev: DB 0
+  - Prod: DB 1
+- **Storage:** S3-kompatibel für Bilder (geplant)
 
 ### Deployment
 - **Container:** Docker
@@ -248,7 +252,59 @@
 
 ---
 
-## 📝 Notizen
+## �️ Backend-Infrastruktur (Setup bereit)
+
+### PostgreSQL
+- **Server:** 10.0.0.6:5432
+- **User:** medusa_user
+- **Datenbanken:**
+  - `diefliegengitterprofis_dev` (Development)
+  - `diefliegengitterprofis_prod` (Production)
+- **Setup-Scripte:**
+  - `backend/setup-postgres.sql` - SQL-Script
+  - `backend/setup-postgres.ps1` - PowerShell-Script
+
+**Setup ausführen:**
+```powershell
+cd backend
+.\setup-postgres.ps1
+```
+
+### Redis
+- **Service:** redis.default.svc.cluster.local:6379
+- **Datenbanken:**
+  - DB 0 (Development)
+  - DB 1 (Production)
+- **Deployment:** `k8s/redis-deployment.yaml`
+- **Storage:** 5GB PersistentVolume
+
+**Deployment:**
+```bash
+kubectl apply -f k8s/redis-deployment.yaml
+kubectl get pods -l app=redis
+```
+
+### Kubernetes Cluster
+- **k8s-node-1:** 10.0.0.3
+- **k8s-node-2:** 10.0.0.4
+- **k8s-node-3:** 10.0.0.5
+
+### Connection Strings
+**Development:**
+```
+DATABASE_URL=postgresql://medusa_user:PASSWORD@10.0.0.6:5432/diefliegengitterprofis_dev
+REDIS_URL=redis://redis.default.svc.cluster.local:6379/0
+```
+
+**Production:**
+```
+DATABASE_URL=postgresql://medusa_user:PASSWORD@10.0.0.6:5432/diefliegengitterprofis_prod
+REDIS_URL=redis://redis.default.svc.cluster.local:6379/1
+```
+
+---
+
+## �📝 Notizen
 
 ### Besonderheiten
 - Warenkorb nutzt LocalStorage (temporär, bis Medusa integriert ist)
