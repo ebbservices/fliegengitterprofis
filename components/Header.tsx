@@ -37,33 +37,37 @@ export default function Header() {
           </button>
 
           <div className={`${isMenuOpen ? 'block' : 'hidden'} lg:flex lg:items-center lg:gap-5 absolute lg:relative top-full left-0 right-0 bg-white/95 backdrop-blur-md lg:bg-transparent shadow-lg lg:shadow-none p-4 lg:p-0`}>
-            <Link href="/" className="block py-3 lg:py-0 text-slate-700 hover:text-orange-500 transition-all font-medium text-sm relative group">
+            <a href="#start" onClick={() => setIsMenuOpen(false)} className="block py-3 lg:py-0 text-slate-700 hover:text-orange-500 transition-all font-medium text-sm relative group">
               Start
               <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-orange-500 group-hover:w-full transition-all duration-300"></span>
-            </Link>
-            <Link href="/insektenschutz" className="block py-3 lg:py-0 text-slate-700 hover:text-orange-500 transition-all font-medium text-sm relative group">
+            </a>
+            <a href="#insektenschutz" onClick={() => setIsMenuOpen(false)} className="block py-3 lg:py-0 text-slate-700 hover:text-orange-500 transition-all font-medium text-sm relative group">
               Insektenschutz
               <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-orange-500 group-hover:w-full transition-all duration-300"></span>
-            </Link>
-            <Link href="/leistungen" className="block py-3 lg:py-0 text-slate-700 hover:text-orange-500 transition-all font-medium text-sm relative group">
+            </a>
+            <a href="#leistungen" onClick={() => setIsMenuOpen(false)} className="block py-3 lg:py-0 text-slate-700 hover:text-orange-500 transition-all font-medium text-sm relative group">
               Leistungen
               <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-orange-500 group-hover:w-full transition-all duration-300"></span>
-            </Link>
-            <Link href="/video" className="block py-3 lg:py-0 text-slate-700 hover:text-orange-500 transition-all font-medium text-sm relative group">
+            </a>
+            <a href="#video" onClick={() => setIsMenuOpen(false)} className="block py-3 lg:py-0 text-slate-700 hover:text-orange-500 transition-all font-medium text-sm relative group">
               Video
               <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-orange-500 group-hover:w-full transition-all duration-300"></span>
-            </Link>
-            <Link href="/beispiele" className="block py-3 lg:py-0 text-slate-700 hover:text-orange-500 transition-all font-medium text-sm relative group">
+            </a>
+            <a href="#beispiele" onClick={() => setIsMenuOpen(false)} className="block py-3 lg:py-0 text-slate-700 hover:text-orange-500 transition-all font-medium text-sm relative group">
               Beispiele
               <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-orange-500 group-hover:w-full transition-all duration-300"></span>
-            </Link>
-            <Link href="/kundenstimmen" className="block py-3 lg:py-0 text-slate-700 hover:text-orange-500 transition-all font-medium text-sm relative group">
+            </a>
+            <a href="#kundenstimmen" onClick={() => setIsMenuOpen(false)} className="block py-3 lg:py-0 text-slate-700 hover:text-orange-500 transition-all font-medium text-sm relative group">
               Kundenstimmen
               <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-orange-500 group-hover:w-full transition-all duration-300"></span>
+            </a>
+            <Link href="/shop" className="block py-3 lg:py-0 text-slate-700 hover:text-orange-500 transition-all font-medium text-sm relative group">
+              Shop
+              <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-orange-500 group-hover:w-full transition-all duration-300"></span>
             </Link>
-            <Link href="/kontakt" className="block mt-4 lg:mt-0 lg:ml-4 bg-gradient-to-r from-orange-500 to-orange-600 text-white px-6 py-2.5 rounded-full hover:from-orange-600 hover:to-orange-700 transition-all font-semibold text-sm shadow-lg hover:shadow-xl hover:scale-105">
+            <a href="#kontakt" onClick={() => setIsMenuOpen(false)} className="block mt-4 lg:mt-0 lg:ml-4 bg-gradient-to-r from-orange-500 to-orange-600 text-white px-6 py-2.5 rounded-full hover:from-orange-600 hover:to-orange-700 transition-all font-semibold text-sm shadow-lg hover:shadow-xl hover:scale-105">
               Kontakt
-            </Link>
+            </a>
           </div>
         </nav>
       </div>
