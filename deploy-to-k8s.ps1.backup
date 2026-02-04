@@ -1,7 +1,7 @@
 ﻿#!/usr/bin/env pwsh
 <#
 .SYNOPSIS
-    Build, push and deploy the fliegengitter-shop application to Kubernetes
+    Build, push and deploy the mobatix-website application to Kubernetes
 .DESCRIPTION
     This script builds the Docker image, pushes it to a registry, and deploys it to Kubernetes
 .PARAMETER Registry
@@ -32,7 +32,7 @@
 
 param(
     [string]$Registry = "registry.mobatix.de",
-    [string]$ImageName = "fliegengitter-shop",
+    [string]$ImageName = "mobatix-website",
     [string]$Tag = "latest",
     [string]$Namespace = "default",
     [string]$RegistryUsername = "admin",
@@ -70,7 +70,7 @@ $FullImageName = "${Registry}/${ImageName}:${Tag}"
 Write-Host @"
 
 *****************************************************************
-*         Fliegengitter Shop Kubernetes Deployment         *
+*         mobatix-website Kubernetes Deployment            *
 *****************************************************************
 
 Registry:   $Registry
@@ -157,7 +157,7 @@ if (-not $SkipDeploy) {
     if (Test-Path $deploymentFile) {
         # Read deployment file and replace image
         $deploymentContent = Get-Content $deploymentFile -Raw
-        $deploymentContent = $deploymentContent -replace 'image: .*fliegengitter-shop:.*', "image: $FullImageName"
+        $deploymentContent = $deploymentContent -replace 'image: .*mobatix-website:.*', "image: $FullImageName"
         $deploymentContent | Set-Content $deploymentFile
     }
     
@@ -171,7 +171,7 @@ if (-not $SkipDeploy) {
     
     # Wait for deployment to be ready
     Write-Step "Waiting for deployment to be ready..."
-    kubectl rollout status deployment/fliegengitter-shop -n $Namespace --timeout=300s
+    kubectl rollout status deployment/mobatix-website -n $Namespace --timeout=300s
     
     if ($LASTEXITCODE -eq 0) {
         Write-Success "Deployment is ready!"
@@ -179,9 +179,9 @@ if (-not $SkipDeploy) {
     else {
         Write-Error "Deployment rollout failed or timed out"
         Write-Host "`nChecking pod status..." -ForegroundColor Yellow
-        kubectl get pods -n $Namespace -l app=fliegengitter-shop
+        kubectl get pods -n $Namespace -l app=mobatix-website
         Write-Host "`nChecking pod logs..." -ForegroundColor Yellow
-        kubectl logs -n $Namespace -l app=fliegengitter-shop --tail=50
+        kubectl logs -n $Namespace -l app=mobatix-website --tail=50
         exit 1
     }
     
@@ -191,10 +191,10 @@ if (-not $SkipDeploy) {
     kubectl get pods -n $Namespace -l app=mobatix-website
     
     Write-Host "`nServices:" -ForegroundColor Cyan
-    kubectl get svc -n $Namespace -l app=fliegengitter-shop
+    kubectl get svc -n $Namespace -l app=mobatix-website
     
     Write-Host "`nIngress:" -ForegroundColor Cyan
-    kubectl get ingress -n $Namespace fliegengitter-shop-ingress
+    kubectl get ingress -n $Namespace mobatix-website-ingress
     
     Write-Host @"
 
@@ -203,13 +203,16 @@ if (-not $SkipDeploy) {
 *****************************************************************
 
 Your application should be available at:
-  • https://dev.diefliegengitterprofis.mobatix.de
+  • https://www.mobatix.de
+  • https://www.www.mobatix.de
+  • https://mobatix.com
+  • https://www.mobatix.com
 
 To view logs:
-  kubectl logs -n $Namespace -l app=fliegengitter-shop -f
+  kubectl logs -n $Namespace -l app=mobatix-website -f
 
 To check status:
-  kubectl get all -n $Namespace -l app=fliegengitter-shop
+  kubectl get all -n $Namespace -l app=mobatix-website
 
 "@ -ForegroundColor Green
 }

@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: fliegengitter-shop
-        image: registry.mobatix.de/fliegengitter-shop:latest
+        image: registry.mobatix.de/fliegengitter-shop:1.0.0
         ports:
         - containerPort: 3000
         env:
@@ -41,6 +41,8 @@ spec:
             port: 3000
           initialDelaySeconds: 5
           periodSeconds: 5
+      imagePullSecrets:
+      - name: registry-secret
 ---
 apiVersion: v1
 kind: Service
@@ -79,3 +81,4 @@ spec:
             name: fliegengitter-shop
             port:
               number: 80
+
