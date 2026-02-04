@@ -1,65 +1,415 @@
-import Image from "next/image";
+import Header from '@/components/Header';
+import Footer from '@/components/Footer';
+import Link from 'next/link';
+import Image from 'next/image';
 
 export default function Home() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
+    <>
+      <Header />
+      
+      <main className="pt-20">
+        <section id="start" className="relative bg-gradient-to-br from-[#FF8C42] to-[#ff6b1a] text-white py-32 px-4 overflow-hidden">
+          <div className="absolute inset-0 opacity-20">
+            <Image 
+              src="/images/hero-image.jpg" 
+              alt="Background" 
+              fill
+              className="object-cover"
+              priority
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
+          </div>
+          <div className="container mx-auto text-center relative z-10">
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 leading-tight">
+              Endlich Schluss mit lästigen Insekten<br />in Ihren eigenen vier Wänden
+            </h1>
+            <p className="text-xl md:text-2xl mb-8 max-w-3xl mx-auto">
+              Unsere Premium-Insektenschutzgitter bieten effektiven Schutz vor lästigen Insekten wie Insekten und Fliegen, ohne die Luftzirkulation im Raum zu beeinträchtigen.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Link 
+                href="#kontakt" 
+                className="bg-white text-[#FF8C42] px-8 py-4 rounded-full font-semibold text-lg hover:bg-[#F5F5F5] transition-colors"
+              >
+                Jetzt anfragen!
+              </Link>
+              <Link 
+                href="#insektenschutz" 
+                className="bg-transparent border-2 border-white text-white px-8 py-4 rounded-full font-semibold text-lg hover:bg-white hover:text-[#FF8C42] transition-colors"
+              >
+                Mehr Informationen
+              </Link>
+            </div>
+            <div className="mt-12">
+              <Link 
+                href="https://g.page/r/CXx5lQn7kYL_EBE/review" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="inline-block text-white hover:text-[#F5F5F5] transition-colors"
+              >
+                ⭐ Über 175 Bewertungen
+              </Link>
+            </div>
+          </div>
+        </section>
+
+        <section id="insektenschutz" className="py-20 px-4 bg-white">
+          <div className="container mx-auto">
+            <div className="grid md:grid-cols-2 gap-12">
+              <div>
+                <h2 className="text-3xl md:text-4xl font-bold text-[#2C2C2C] mb-6">
+                  Premium Insektenschutzgitter
+                </h2>
+                <p className="text-[#6B6B6B] leading-relaxed mb-4">
+                  Unsere hochwertigen Fliegengitter für Maß bestehen aus robustem Aluminium und eignen sich für alle Fenster, insbesondere für Räume mit 17 mm Platz zwischen Rollladen und Fenster. Unsere Produkte lassen sich mühelos entweder durch Schrauben oder mit einem praktischen Klicksystem installieren. Das einzigartige Merkmal unserer Fliegengitter ist die Magnethalterung beim Schließen, die für eine stabile und sichere Versiegelung sorgt, wodurch keine Insekten eindringen können.
+                </p>
+                <p className="text-[#6B6B6B] leading-relaxed">
+                  Für barrierefreie Fenster und Balkone bieten wir ein flaches, stufenloses System von nur 0,5 mm Höhe an. Unsere Produkte sind in verschiedenen Farben erhältlich und zeichnen sich durch ihre erstklassige Qualität aus. Zusätzlich berücksichtigen wir die Bedürfnisse von Allergikern und Katzenbesitzern, um ein angenehmes und praktisches Nutzungserlebnis zu gewährleisten.
+                </p>
+              </div>
+              <div>
+                <h2 className="text-3xl md:text-4xl font-bold text-[#2C2C2C] mb-6">
+                  Sicher & praktisch
+                </h2>
+                <p className="text-[#6B6B6B] leading-relaxed mb-4">
+                  Unsere Premium-Insektenschutzgitter bieten eine Vielzahl von Vorteilen. Sie schützen nicht nur vor lästigen Insekten wie Mücken, Fliegen und Wespen, sondern auch vor anderen ungebetenen Gästen wie Spinnen und Nagetieren. Darüber hinaus ermöglichen sie eine gute Belüftung Ihrer Räume und lassen frische Luft in den Raum, ohne dass dabei Insekten eindringen können. Sie sind zudem einfach zu installieren und pflegeleicht, da sie leicht zu reinigen sind. Sie bieten somit einen effektiven Schutz vor Insekten und tragen gleichzeitig zu einem angenehmen Raumklima bei.
+                </p>
+                <p className="text-[#6B6B6B] leading-relaxed">
+                  Sie können sie entweder mit einem handelsüblichen Staubsauger vorsichtig absaugen oder mit einem feuchten Lappen reinigen. Diese Pflegeoptionen ermöglichen eine problemlose Reinigung und gewährleisten, dass Ihre Fliegengitter stets sauber und funktional bleiben.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="leistungen" className="py-20 px-4 bg-[#F5F5F5]">
+          <div className="container mx-auto">
+            <div className="text-center mb-16">
+              <h2 className="text-3xl md:text-4xl font-bold text-[#2C2C2C] mb-4">
+                Unsere Leistungen
+              </h2>
+              <p className="text-[#6B6B6B] text-lg max-w-3xl mx-auto">
+                Neben professionellen Insektenschutzgittern, bieten wir eine Vielzahl an weiteren Leistungen an. Verschaffen Sie sich einen ersten Eindruck und sprechen Sie uns bei Fragen jederzeit an!
+              </p>
+            </div>
+
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {[
+                {
+                  title: 'Fliegengitter nach Maß',
+                  icon: '/images/icon-fliegengitter-nach-mass.png',
+                  description: 'Fliegengitter nach Maß bieten die ideale Lösung für individuelle Bedürfnisse. Diese maßgefertigten Gitter passen exakt zu Ihren Fenstern und werden in einer Vielzahl von Farben angeboten, um sich harmonisch in Ihr Zuhause einzufügen. Die flexible Installation ermöglicht entweder ein benutzerfreundliches Klick-System oder die klassische Schraubmontage – ganz nach Ihren Vorlieben. Ob zwischen Rolladen und Fenster oder davor platziert, diese Fliegengitter bieten nicht nur effektiven Schutz vor lästigen Insekten, sondern passen sich auch nahtlos der Architektur Ihres Hauses an.'
+                },
+                {
+                  title: 'Große Farbauswahl',
+                  icon: '/images/icon-grosse-farbauswahl.png',
+                  description: 'Unsere Fliegengitter nach Maß stehen nicht nur für perfekte Passform, sondern auch für individuellen Stil. Erhältlich in einer breiten Palette von Farben, können unsere Gitter sogar in besonderen Farbtönen lackiert werden, um sich nahtlos in Ihr Wohnambiente einzufügen. Darüber hinaus bieten wir auch Holzlackierungen an, die eine ansprechende Option für eine warme und natürliche Optik darstellen. So kombinieren wir Funktionalität mit ästhetischer Vielfalt, um Ihren Bedürfnissen und Ihrem Geschmack gerecht zu werden.'
+                },
+                {
+                  title: 'Preisgarantie',
+                  icon: '/images/icon-preisgarantie.png',
+                  description: 'Unsere Preisgarantie vermittelt Ihnen die Gewissheit, dass Sie stets das beste Angebot erhalten. Mit unserem Engagement für transparente und faire Preise versichern wir Ihnen, dass der vereinbarte Preis für unsere Produkte stabil bleibt. So können Sie bedenkenlos planen und sich darauf verlassen, dass Qualität und Kostensicherheit Hand in Hand gehen. Unsere Preisgarantie ist unser Versprechen an Sie, herausragende Produkte zu einem festen und verlässlichen Preis zu erhalten.'
+                },
+                {
+                  title: 'Kostenlose Beratung',
+                  icon: '/images/icon-kostenlose-beratung.png',
+                  description: 'Unsere kostenlose Beratung steht Ihnen zur Verfügung, um sicherzustellen, dass Sie die bestmöglichen Entscheidungen treffen. Unser engagiertes Team von Experten nimmt sich die Zeit, um auf Ihre individuellen Bedürfnisse einzugehen und maßgeschneiderte Lösungen zu bieten. Egal, ob es um Produktauswahl, Anpassungen oder technische Fragen geht – wir sind hier, um Ihnen fachkundige Unterstützung zu bieten. Vertrauen Sie auf unsere kostenlose Beratung, um informierte Entscheidungen zu treffen und das optimale Ergebnis für Ihre Anforderungen zu erzielen.'
+                },
+                {
+                  title: 'Inklusive Beratung & Montage',
+                  icon: '/images/icon-montage.png',
+                  description: 'Unsere umfassenden Dienstleistungen umfassen nicht nur eine kostenlose Beratung, sondern auch die Montage Ihrer Produkte. Unser engagiertes Expertenteam steht Ihnen zur Seite, um sicherzustellen, dass Sie die richtigen Entscheidungen treffen und Ihre Anforderungen erfüllt werden. Beachten Sie bitte, dass in einem Umkreis von 50 Kilometern, abhängig von der Entfernung, möglicherweise Kosten anfallen können. Wir bieten flexible Lösungen, um Ihnen den besten Service zu gewährleisten. Verlassen Sie sich auf uns für eine maßgeschneiderte Beratung und professionelle Montage.'
+                },
+                {
+                  title: 'Pollenfliegengitter',
+                  icon: '/images/icon-pollenfliegengitter.png',
+                  description: 'Unsere Pollenfliegengitter sind die optimale Lösung, um Ihr Zuhause vor Pollen und Insekten zu schützen. Mit feinen Mesh-Geweben blockieren sie effektiv Pollen und lassen gleichzeitig frische Luft hindurch. Diese hochwertigen Gitter sind speziell entwickelt, um Allergikern eine pollenfreie Umgebung zu bieten. Die maßgefertigten Pollenfliegengitter passen exakt zu Ihren Fenstern und ermöglichen es Ihnen, die Natur zu genießen, ohne auf Komfort verzichten zu müssen. Investieren Sie in eine pollenfreie Wohnatmosphäre und erleben Sie ungestörtes Wohlbefinden in Ihrem Zuhause.'
+                },
+                {
+                  title: 'Plissee',
+                  icon: '/images/icon-plissee.png',
+                  description: 'Entdecken Sie unseren vielseitigen Plisse-Sonnenschutz, der Funktionalität und Ästhetik perfekt kombiniert. Diese innovativen Plisse-Vorhänge bieten nicht nur effektiven Sonnenschutz, sondern sind auch als Verdunklungslösung verfügbar, um eine optimale Lichtregulierung in Ihren Räumen zu gewährleisten. Die maßgefertigten Plissees passen sich exakt Ihren Fenstern an und sind in einer breiten Palette von Farben erhältlich, sodass Sie die perfekte harmonische Integration in Ihr Wohnambiente finden können. Genießen Sie flexiblen Sonnenschutz mit Stil und wählen Sie aus unserer umfassenden Auswahl an Plissee-Optionen für ein individuelles Wohngefühl.'
+                },
+                {
+                  title: 'Lichtschachtabdeckungen',
+                  icon: '/images/icon-lichtschachtabdeckungen.png',
+                  description: 'Unsere Lichtschachtabdeckungen auf Sondermaß bieten die ideale Lösung, um Lichtschächte effektiv zu schützen und dabei eine maßgeschneiderte Passform zu gewährleisten. Egal, welche individuellen Anforderungen Ihr Lichtschacht hat, wir fertigen Abdeckungen exakt nach Ihren Spezifikationen an. Diese hochwertigen Abdeckungen dienen nicht nur dem Schutz vor Schmutz, Laub und Ungeziefer, sondern auch der Sicherheit und Ästhetik. Mit einer breiten Auswahl an Materialien und Designs können Sie sicherstellen, dass die Lichtschachtabdeckung nicht nur funktional, sondern auch optisch ansprechend ist – eine perfekte Ergänzung für Ihr Zuhause.'
+                },
+                {
+                  title: 'Wohnmobil-Montage',
+                  icon: '/images/icon-wohnmobilmontage.png',
+                  description: 'Entdecken Sie die vielseitige Anwendung unserer Fliegengitter – nicht nur für Wohnungen, sondern auch für Wohnmobile. Unsere maßgefertigten Fliegengitter passen sich perfekt den Fenstern Ihres Wohnmobils an und bieten effektiven Schutz vor lästigen Insekten, ohne die frische Luft zu beeinträchtigen. Die flexible Installation sorgt dafür, dass Sie unterwegs eine insektenfreie Umgebung genießen können. Investieren Sie in Komfort und Unbeschwertheit während Ihrer Reisen – unsere Fliegengitter sind die ideale Ergänzung für jedes Wohnmobilabenteuer.'
+                }
+              ].map((service, index) => (
+                <div key={index} className="bg-white p-6 rounded-lg shadow-md hover:shadow-xl transition-shadow">
+                  {service.icon && (
+                    <div className="mb-4 flex justify-center">
+                      <Image 
+                        src={service.icon} 
+                        alt={service.title} 
+                        width={80} 
+                        height={80}
+                      />
+                    </div>
+                  )}
+                  <h4 className="text-xl font-semibold text-[#2C2C2C] mb-3">
+                    {service.title}
+                  </h4>
+                  <p className="text-[#6B6B6B] leading-relaxed text-sm">
+                    {service.description}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section className="py-20 px-4 bg-white">
+          <div className="container mx-auto max-w-4xl">
+            <h2 className="text-3xl md:text-4xl font-bold text-[#2C2C2C] mb-6 text-center">
+              Fenster richtig abmessen
+            </h2>
+            <p className="text-[#6B6B6B] leading-relaxed text-center text-lg mb-8">
+              Bitte messen Sie Ihre geöffneten Fenster von innen ab und addieren Sie 2cm zur Breite und Höhe. Die Maße können Sie uns gerne bei Ihrer Anfrage mitteilen, so können wir Ihnen genauere Angaben zum Preis machen.
+            </p>
+            <div className="flex justify-center">
+              <Image 
+                src="/images/fenster-abmessen.png" 
+                alt="Fenster richtig abmessen" 
+                width={600} 
+                height={400}
+                className="rounded-lg shadow-lg"
+              />
+            </div>
+          </div>
+        </section>
+
+        <section id="video" className="py-20 px-4 bg-[#F5F5F5]">
+          <div className="container mx-auto max-w-4xl text-center">
+            <h2 className="text-3xl md:text-4xl font-bold text-[#2C2C2C] mb-6">
+              Unser Promo-Video
+            </h2>
+            <p className="text-[#6B6B6B] mb-8 text-lg">
+              Manchmal sagen Videos mehr als tausend Worte. Unser neues Werbevideo!
+            </p>
+            <div className="aspect-video bg-[#2C2C2C] rounded-lg overflow-hidden">
+              <video 
+                controls 
+                className="w-full h-full"
+                poster="/images/hero-image.jpg"
+              >
+                <source src="/videos/dfgp-promo.mp4" type="video/mp4" />
+                Ihr Browser unterstützt das Video-Tag nicht.
+              </video>
+            </div>
+          </div>
+        </section>
+
+        <section id="beispiele" className="py-20 px-4 bg-white">
+          <div className="container mx-auto">
+            <h2 className="text-3xl md:text-4xl font-bold text-[#2C2C2C] mb-12 text-center">
+              Unsere Arbeiten
+            </h2>
+            <p className="text-[#6B6B6B] text-center mb-8">
+              Einige unserer bisherigen Arbeiten bei Kunden.
+            </p>
+            <div className="grid md:grid-cols-3 gap-6">
+              {[1, 2, 3, 4, 5, 6].map((item) => (
+                <div key={item} className="aspect-square bg-[#F5F5F5] rounded-lg overflow-hidden relative">
+                  <Image 
+                    src={`/images/gallery-img-${item}.jpg`} 
+                    alt={`Beispiel ${item}`} 
+                    fill
+                    className="object-cover hover:scale-110 transition-transform duration-300"
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section id="kundenstimmen" className="py-20 px-4 bg-[#F5F5F5]">
+          <div className="container mx-auto">
+            <h2 className="text-3xl md:text-4xl font-bold text-[#2C2C2C] mb-4 text-center">
+              Kundenstimmen
+            </h2>
+            <p className="text-[#6B6B6B] text-center mb-12 text-lg">
+              Ob Firma oder Privat – Die Fliegengitter Profis stehen für Qualität und zufriedene Kunden!
+            </p>
+
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {[
+                {
+                  name: 'Hüseyin',
+                  location: 'Düsseldorf',
+                  text: 'Ich bin sehr zufrieden mit den Fliegengitter Profis, die Fliegengitter für unsere fünf Fenster und eine Balkontür geliefert und montiert hat. Der Service war schnell und professionell. Im ersten Termin wurde alles von einem freundlichen Mitarbeiter ausgemessen und im zweiten Termin wurde alles fachgerecht montiert. Die Fliegengitter sind von hoher Qualität und passen perfekt zu den Fenstern und der Tür (Obwohl sie sehr groß ist). Die Kommunikation war auch sehr gut, ich wurde immer über den Stand der Bestellung informiert. Ich kann die Fliegengitter Profis nur weiterempfehlen, sie hat meine Erwartungen übertroffen. Klare Kaufempfehlung!'
+                },
+                {
+                  name: 'Michael E.',
+                  location: 'Neuss',
+                  text: 'Ich habe kürzlich Fliegengitter für mein gesamtes Haus bei der Firma bestellt und war rundum begeistert. Die Beratung war äußerst hilfreich und professionell, und die Montage verlief reibungslos. Die Produkte selbst sind von ausgezeichneter Qualität und erfüllen meine Erwartungen voll und ganz. Ich bin mit dem Service und den Produkten so zufrieden, dass ich nun in Erwägung ziehe, auch Plisés hier zu bestellen. Die Firma bietet ein beeindruckendes Maß an Service und Qualität, das ich uneingeschränkt weiterempfehlen kann!'
+                },
+                {
+                  name: 'Dirk S.',
+                  location: 'Niederkassel',
+                  text: 'Ich habe maßgeschneiderte Sonnenschutzrollos für meine verglaste Veranda bei den Fliegengitterprofis G&K bestellt und bin begeistert! Die Vielfalt an Farben und die Möglichkeit, Sonnenschutz und Abdunkelung individuell anzupassen, sind fantastisch. Die Qualität der Produkte ist erstklassig, die Beratung war äußerst hilfreich und inspirierend, und die pünktliche Lieferung sowie die einwandfreie Montage haben mich überzeugt. Sehr empfehlenswert! Zudem haben zwei meiner Nachbarn, die die Rollos sahen, sich ebenso begeistert gezeigt und direkt im Anschluss ebenfalls Bestellungen aufgegeben.'
+                },
+                {
+                  name: 'Jutta S.',
+                  location: 'Ratingen',
+                  text: 'Die Erfahrung mit den Fliegengitterprofis war nichts weniger als phänomenal. Von der ersten Kontaktaufnahme bis zur abschließenden Montage war jeder Schritt herausragend. Die Beratung war äußerst informativ, die Lieferung erfolgte sogar früher als erwartet, und die Handwerker haben die Plissees mit beispielloser Sorgfalt montiert. Ein Service, der in jeder Hinsicht die Erwartungen übertrifft. Uneingeschränkt empfehlenswert!'
+                },
+                {
+                  name: 'Mario',
+                  location: 'Bedburg',
+                  text: 'Die Fliegengitter-Profis haben einen exzellenten Service geboten. Von der Beratung bis zur Installation verlief alles reibungslos. Das Team arbeitete professionell, pünktlich und hinterließ keinen Schmutz. Die maßgefertigten Fliegengitter passen perfekt und erfüllen ihren Zweck optimal. Die freundliche Kommunikation und das kundenorientierte Vorgehen haben einen positiven Eindruck hinterlassen. Insgesamt kann ich die Fliegengitter-Profis uneingeschränkt empfehlen.'
+                },
+                {
+                  name: 'Nico',
+                  location: 'Solingen',
+                  text: 'Die Fliegengitter-Profis haben meine Erwartungen übertroffen, als ich einen Pollen-Insektenschutz bei ihnen bestellt habe. Das Produkt nicht nur funktional, sondern auch optisch äußerst ansprechend. Die maßgefertigte Lösung integriert sich nahtlos in meine Fenster und bietet nicht nur Schutz vor Insekten, sondern auch effektive Filterung von Pollen. Der Service der Firma war herausragend, von der Beratung bis zur Installation. Die Qualität des Schutzes und die ästhetische Gestaltung haben mich überzeugt. Insgesamt eine herausragende Leistung der Fliegengitter-Profis, die ich gerne lobend hervorhebe.'
+                },
+                {
+                  name: 'Thomas K.',
+                  location: 'Bergheim',
+                  text: 'Die Fliegengitterprofis verdienen meine höchste Anerkennung! Ihre Beratung war exzellent, die Lieferung kam sogar früher als geplant und die Montage war makellos. Diese Firma übertrifft in jedem Bereich die Erwartungen und ich kann sie uneingeschränkt weiterempfehlen.'
+                },
+                {
+                  name: 'Thomas G.',
+                  location: 'Pulheim',
+                  text: 'Sehr freundliche und kompetente Beratung, ich wurde über jedes Detail und den gesamten Verlauf informiert. Zeitfenster wurde exakt eingehalten und das besondere es wurde keine Anfahrtspauschale berechnet, was bei vielen anderen leider der Fall ist. Klare Weiterempfehlung'
+                },
+                {
+                  name: 'Yücel',
+                  location: 'Dortmund',
+                  text: 'Ich wollte mich nochmal für die zuverlässige und saubere Arbeit bedanken. Ihr seid einfach die besten! Ich bin total zufrieden mit den Fliegengittern. Bleibt weiterhin so wie ihr seid und viel Erfolg in der Zukunft.'
+                }
+              ].map((testimonial, index) => (
+                <div key={index} className="bg-white p-6 rounded-lg shadow-md">
+                  <p className="text-[#6B6B6B] leading-relaxed mb-4 italic">
+                    &quot;{testimonial.text}&quot;
+                  </p>
+                  <div className="border-t pt-4">
+                    <p className="font-semibold text-[#2C2C2C]">{testimonial.name}</p>
+                    <p className="text-sm text-[#6B6B6B]">{testimonial.location}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="text-center mt-16">
+              <h3 className="text-2xl font-bold text-[#2C2C2C] mb-4">
+                Haben wir Sie überzeugt?
+              </h3>
+              <p className="text-xl text-[#6B6B6B] mb-6">
+                Schluss mit lästigen Insekten in Ihren vier Wänden!
+              </p>
+              <Link 
+                href="#kontakt" 
+                className="inline-block bg-[#FF8C42] text-white px-8 py-4 rounded-full font-semibold text-lg hover:bg-[#ff6b1a] transition-colors"
+              >
+                Jetzt anfragen!
+              </Link>
+            </div>
+          </div>
+        </section>
+
+        <section id="kontakt" className="py-20 px-4 bg-white">
+          <div className="container mx-auto max-w-4xl">
+            <h3 className="text-3xl md:text-4xl font-bold text-[#2C2C2C] mb-8 text-center">
+              Haben Sie Interesse an unseren Produkten?
+            </h3>
+            <p className="text-[#6B6B6B] text-center mb-12 text-lg">
+              Sie haben Fragen zu Ihrem kommenden Projekt oder möchten Informationen zu unseren Fliegengittern, Plissees oder anderen Produkten? Wir freuen uns auf Ihre Kontaktaufnahme!
+            </p>
+
+            <div className="grid md:grid-cols-3 gap-6 mb-12">
+              <a 
+                href="tel:+4915737952490"
+                className="flex flex-col items-center p-6 bg-[#F5F5F5] rounded-lg hover:bg-[#FF8C42] hover:text-white transition-colors group"
+              >
+                <div className="mb-3">
+                  <Image src="/images/call-icon.svg" alt="Telefon" width={48} height={48} />
+                </div>
+                <h4 className="font-semibold mb-2">Anruf unter</h4>
+                <p className="text-sm">+49 1573 7952490</p>
+              </a>
+
+              <a 
+                href="mailto:info@diefliegengitterprofis.de"
+                className="flex flex-col items-center p-6 bg-[#F5F5F5] rounded-lg hover:bg-[#FF8C42] hover:text-white transition-colors group"
+              >
+                <div className="mb-3">
+                  <Image src="/images/mail-icon.svg" alt="E-Mail" width={48} height={48} />
+                </div>
+                <h4 className="font-semibold mb-2">E-Mail an</h4>
+                <p className="text-sm">info@diefliegengitterprofis.de</p>
+              </a>
+
+              <a 
+                href="https://api.whatsapp.com/send?phone=4915737952490"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex flex-col items-center p-6 bg-[#F5F5F5] rounded-lg hover:bg-[#FF8C42] hover:text-white transition-colors group"
+              >
+                <div className="mb-3">
+                  <Image src="/images/whatsapp-icon.png" alt="WhatsApp" width={48} height={48} />
+                </div>
+                <h4 className="font-semibold mb-2">WhatsApp an</h4>
+                <p className="text-sm">+49 1573 7952490</p>
+              </a>
+            </div>
+
+            <div className="bg-[#F5F5F5] p-8 rounded-lg">
+              <h4 className="text-2xl font-bold text-[#2C2C2C] mb-6 text-center">
+                Projektanfrage
+              </h4>
+              <form className="space-y-4">
+                <div className="grid md:grid-cols-2 gap-4">
+                  <input 
+                    type="text" 
+                    placeholder="Ihr Name" 
+                    className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-[#FF8C42] focus:outline-none"
+                  />
+                  <input 
+                    type="email" 
+                    placeholder="Ihre E-Mail" 
+                    className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-[#FF8C42] focus:outline-none"
+                  />
+                </div>
+                <input 
+                  type="tel" 
+                  placeholder="Ihre Telefonnummer" 
+                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-[#FF8C42] focus:outline-none"
+                />
+                <textarea 
+                  placeholder="Ihre Nachricht" 
+                  rows={5}
+                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-[#FF8C42] focus:outline-none"
+                ></textarea>
+                <div className="flex items-start gap-2">
+                  <input 
+                    type="checkbox" 
+                    id="privacy" 
+                    className="mt-1"
+                  />
+                  <label htmlFor="privacy" className="text-sm text-[#6B6B6B]">
+                    Ich habe die <Link href="/datenschutz" className="text-[#FF8C42] hover:underline">Datenschutzbestimmungen</Link> gelesen und akzeptiert.
+                  </label>
+                </div>
+                <button 
+                  type="submit"
+                  className="w-full bg-[#FF8C42] text-white px-8 py-4 rounded-full font-semibold text-lg hover:bg-[#ff6b1a] transition-colors"
+                >
+                  Anfrage senden
+                </button>
+              </form>
+            </div>
+          </div>
+        </section>
       </main>
-    </div>
+
+      <Footer />
+    </>
   );
 }
