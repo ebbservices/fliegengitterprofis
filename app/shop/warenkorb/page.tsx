@@ -51,7 +51,7 @@ export default function WarenkorbPage() {
     return (
       <>
         <Header />
-        <main className="pt-14 min-h-screen bg-gray-50">
+        <main className="pt-20 min-h-screen bg-gray-50">
           <div className="container mx-auto px-4 py-20 text-center">
             <p className="text-slate-600">Lädt...</p>
           </div>
@@ -65,7 +65,7 @@ export default function WarenkorbPage() {
     <>
       <Header />
       
-      <main className="pt-14">
+      <main className="pt-20">
         <section className="py-12 px-4 bg-gradient-to-b from-slate-900 to-slate-800 text-white">
           <div className="container mx-auto">
             <h1 className="text-4xl md:text-5xl font-bold mb-4">

@@ -69,7 +69,7 @@ export default function FliegengitterKonfigurator() {
     <>
       <Header />
       
-      <main className="pt-16">
+      <main className="pt-20">
         <section className="py-12 px-4 bg-gradient-to-b from-slate-900 to-slate-800 text-white">
           <div className="container mx-auto">
             <Link href="/shop" className="inline-flex items-center gap-2 text-slate-300 hover:text-white mb-4 transition-colors">

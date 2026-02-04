@@ -35,7 +35,7 @@ export default function ShopPage() {
     <>
       <Header />
       
-      <main className="pt-16">
+      <main className="pt-20">
         <section className="py-12 px-4 bg-gradient-to-b from-slate-900 to-slate-800 text-white">
           <div className="container mx-auto text-center">
             <h1 className="text-4xl md:text-5xl font-bold mb-4">
