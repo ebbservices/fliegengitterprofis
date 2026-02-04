@@ -1,15 +1,4 @@
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: redis-pvc
-  namespace: default
-spec:
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: 5Gi
----
+# Redis ConfigMap
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -21,10 +10,11 @@ data:
     maxmemory 512mb
     maxmemory-policy allkeys-lru
     
-    # Persistenz
-    save 900 1
-    save 300 10
-    save 60 10000
+    # Persistenz (disabled for emptyDir - enable when using PVC)
+    # save 900 1
+    # save 300 10
+    # save 60 10000
+    appendonly no
     
     # Datenbanken (0 = dev, 1 = prod)
     databases 16
@@ -42,6 +32,7 @@ data:
     timeout 0
     tcp-keepalive 300
 ---
+# Redis Deployment
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -83,7 +74,7 @@ spec:
         livenessProbe:
           tcpSocket:
             port: 6379
-          initialDelaySeconds: 30
+          initialDelaySeconds: 10
           periodSeconds: 10
         readinessProbe:
           exec:
@@ -93,9 +84,10 @@ spec:
           initialDelaySeconds: 5
           periodSeconds: 5
       volumes:
+      # Using emptyDir for development (data not persisted across pod restarts)
+      # For production, use a PVC with a proper StorageClass
       - name: redis-data
-        persistentVolumeClaim:
-          claimName: redis-pvc
+        emptyDir: {}
       - name: redis-config
         configMap:
           name: redis-config
