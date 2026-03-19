@@ -1,0 +1,92 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## Project Overview
+
+E-commerce shop for custom-made insect screens (Fliegengitter), plissee systems, and light shaft covers. German-language storefront with real-time price configurators. Currently at MVP stage — frontend complete, Medusa backend integration in progress.
+
+Live dev: https://dev.diefliegengitterprofis.mobatix.de
+
+## Commands
+
+### Frontend (root directory)
+```bash
+npm run dev          # Next.js dev server on http://localhost:3000
+npm run build        # Production build (standalone output for Docker)
+npm run start        # Start production server
+npm run lint         # ESLint
+```
+
+### Backend (backend/ directory)
+```bash
+cd backend
+npm run dev          # Medusa dev server on port 9000
+npm run build        # Build Medusa
+npm run seed         # Seed database (medusa exec ./src/scripts/seed.ts)
+npm run start        # Start Medusa production
+```
+
+### Deployment
+```powershell
+.\deploy-to-k8s.ps1 -Tag v1.0.0   # Build Docker image, push to registry, deploy to K8s
+```
+
+## Architecture
+
+### Two-Application Setup
+- **Frontend:** Next.js 16 (App Router) with React 19, Tailwind CSS 4, TypeScript — standalone Docker output
+- **Backend:** Medusa.js 2.13 e-commerce engine — PostgreSQL + Redis, REST/GraphQL APIs
+
+### Frontend Structure (`app/`)
+- `app/page.tsx` — Marketing landing page (hero, features, testimonials)
+- `app/shop/page.tsx` — Shop overview with 3 product categories
+- `app/shop/fliegengitter/page.tsx` — Insect screen configurator
+- `app/shop/plissee/page.tsx` — Plissee system configurator
+- `app/shop/lichtschacht/page.tsx` — Light shaft cover configurator
+- `app/shop/warenkorb/page.tsx` — Shopping cart (LocalStorage-based)
+- `components/` — Header (fixed, with cart badge), Footer, AddToCartModal
+
+### Backend Structure (`backend/src/`)
+- `api/admin/` and `api/store/` — Custom API routes
+- `modules/` — E-commerce modules
+- `scripts/` — Database seed scripts
+- `subscribers/` — Event handlers
+- `workflows/` — Complex business logic
+
+### Price Calculation (client-side in configurator pages)
+```
+Area (m²) = (Width mm × Height mm) / 1,000,000
+Base Price = Area × €45/m²
+Total = Base + Color Surcharge + Mesh Surcharge + Mounting Surcharge
+Final = max(Total, Minimum Price)
+```
+Color surcharges: Weiß €0, Anthrazit/Braun €15, Silber €10. Mesh: Standard €0, Katzennetz €15, Pollenschutz €20, Edelstahl €35. Mounting: Schrauben €0, Klick €10, Einhänge €15.
+
+### Infrastructure
+- Docker multi-stage build (node:20-alpine), port 3000
+- Kubernetes: 2 replicas, ClusterIP service, nginx ingress with Let's Encrypt
+- Registry: registry.mobatix.de
+- DB: PostgreSQL at 10.0.0.6:5432 (dev DB: `diefliegengitterprofis_dev`)
+- Redis: K8s service `redis.default.svc.cluster.local:6379`
+
+### Key Config
+- `next.config.ts` — React Compiler enabled, standalone output, WebP images, SVG allowed
+- `backend/medusa-config.ts` — DB/Redis URLs, CORS, JWT/cookie secrets from env vars
+- `backend/.env.template` — Environment variable reference for backend setup
+
+## Plans & Documentation
+
+Detailed project plans live in `plans/`:
+- `MASTER-PLAN.md` — Complete 10-phase plan with DB schema, API specs, pricing logic
+- `QUICK-REFERENCE.md` — Developer quick reference
+- `TECH-STACK.md` — Architecture details and data models
+
+Also see `DEPLOYMENT.md` (K8s deployment guide) and `PROJEKT-STATUS.md` (current status).
+
+## Design System
+
+- Primary Orange: `#FF8C42`, Dark: `#2C2C2C`, Light: `#F5F5F5`
+- Font: Open Sans / Helvetica Neue / Arial
+- Breakpoints: Mobile <576px, Tablet 576-991px, Desktop 992-1199px, Large ≥1200px
+- All UI text is in German

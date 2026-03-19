@@ -15,7 +15,7 @@
 .PARAMETER RegistryUsername
     Docker registry username (default: admin)
 .PARAMETER RegistryPassword
-    Docker registry password (default: MobatixRegistry2026!)
+    Docker registry password (read from $env:REGISTRY_PASSWORD if not specified)
 .PARAMETER SkipBuild
     Skip Docker build step
 .PARAMETER SkipPush
@@ -36,7 +36,7 @@ param(
     [string]$Tag = "latest",
     [string]$Namespace = "default",
     [string]$RegistryUsername = "admin",
-    [string]$RegistryPassword = "MobatixRegistry2026!",
+    [string]$RegistryPassword = $env:REGISTRY_PASSWORD,
     [switch]$SkipBuild,
     [switch]$SkipPush,
     [switch]$SkipDeploy

@@ -2,52 +2,17 @@
 
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import { useState, useEffect } from 'react';
 import Link from 'next/link';
-
-interface CartItem {
-  product: string;
-  height: number;
-  width: number;
-  color?: string;
-  frameType?: string;
-  meshType?: string;
-  option?: string;
-  price: string;
-}
+import { useCart } from '@/lib/hooks/use-cart';
 
 export default function WarenkorbPage() {
-  const [cart, setCart] = useState<CartItem[]>([]);
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-    loadCart();
-  }, []);
-
-  const loadCart = () => {
-    const savedCart = localStorage.getItem('cart');
-    if (savedCart) {
-      setCart(JSON.parse(savedCart));
-    }
-  };
-
-  const removeItem = (index: number) => {
-    const newCart = cart.filter((_, i) => i !== index);
-    setCart(newCart);
-    localStorage.setItem('cart', JSON.stringify(newCart));
-  };
-
-  const clearCart = () => {
-    setCart([]);
-    localStorage.removeItem('cart');
-  };
+  const { localCart, removeItemLocal, clearCart, cartCount, isLoading } = useCart();
 
   const getTotalPrice = () => {
-    return cart.reduce((sum, item) => sum + parseFloat(item.price), 0).toFixed(2);
+    return localCart.reduce((sum, item) => sum + parseFloat(item.price), 0).toFixed(2);
   };
 
-  if (!mounted) {
+  if (isLoading) {
     return (
       <>
         <Header />
@@ -64,7 +29,7 @@ export default function WarenkorbPage() {
   return (
     <>
       <Header />
-      
+
       <main className="pt-20">
         <section className="py-12 px-4 bg-gradient-to-b from-slate-900 to-slate-800 text-white">
           <div className="container mx-auto">
@@ -78,14 +43,14 @@ export default function WarenkorbPage() {
               Warenkorb
             </h1>
             <p className="text-xl text-slate-300">
-              {cart.length} {cart.length === 1 ? 'Artikel' : 'Artikel'} in Ihrem Warenkorb
+              {cartCount} {cartCount === 1 ? 'Artikel' : 'Artikel'} in Ihrem Warenkorb
             </p>
           </div>
         </section>
 
         <section className="py-12 px-4 bg-white min-h-screen">
           <div className="container mx-auto max-w-6xl">
-            {cart.length === 0 ? (
+            {localCart.length === 0 ? (
               <div className="text-center py-20">
                 <svg className="w-24 h-24 mx-auto text-slate-300 mb-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
@@ -96,7 +61,7 @@ export default function WarenkorbPage() {
                 <p className="text-slate-600 mb-8">
                   Entdecken Sie unsere Produkte und konfigurieren Sie Ihr Wunschprodukt
                 </p>
-                <Link 
+                <Link
                   href="/shop"
                   className="inline-flex items-center gap-2 bg-gradient-to-r from-orange-500 to-orange-600 text-white px-8 py-4 rounded-xl font-bold hover:from-orange-600 hover:to-orange-700 transition-all shadow-lg hover:shadow-xl"
                 >
@@ -109,7 +74,7 @@ export default function WarenkorbPage() {
             ) : (
               <div className="grid lg:grid-cols-3 gap-8">
                 <div className="lg:col-span-2 space-y-4">
-                  {cart.map((item, index) => (
+                  {localCart.map((item, index) => (
                     <div key={index} className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
                       <div className="flex justify-between items-start mb-4">
                         <div>
@@ -128,8 +93,8 @@ export default function WarenkorbPage() {
                           <p className="text-2xl font-bold text-orange-600 mb-2">
                             {item.price} €
                           </p>
-                          <button 
-                            onClick={() => removeItem(index)}
+                          <button
+                            onClick={() => removeItemLocal(index)}
                             className="text-red-600 hover:text-red-700 text-sm font-semibold flex items-center gap-1"
                           >
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -141,8 +106,8 @@ export default function WarenkorbPage() {
                       </div>
                     </div>
                   ))}
-                  
-                  <button 
+
+                  <button
                     onClick={clearCart}
                     className="text-red-600 hover:text-red-700 font-semibold flex items-center gap-2 mt-4"
                   >
@@ -156,38 +121,32 @@ export default function WarenkorbPage() {
                 <div className="lg:col-span-1">
                   <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-2xl shadow-2xl p-6 text-white sticky top-20">
                     <h3 className="text-2xl font-bold mb-6">Zusammenfassung</h3>
-                    
+
                     <div className="space-y-4 mb-6">
                       <div className="flex justify-between pb-3 border-b border-white/20">
                         <span className="text-orange-100">Zwischensumme</span>
                         <span className="font-semibold">{getTotalPrice()} €</span>
                       </div>
-                      
+
                       <div className="flex justify-between pb-3 border-b border-white/20">
                         <span className="text-orange-100">MwSt. (19%)</span>
                         <span className="font-semibold">{(parseFloat(getTotalPrice()) * 0.19).toFixed(2)} €</span>
                       </div>
-                      
+
                       <div className="flex justify-between text-xl font-bold">
                         <span>Gesamt</span>
                         <span>{getTotalPrice()} €</span>
                       </div>
                     </div>
-                    
-                    <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 mb-6">
-                      <p className="text-sm text-orange-100">
-                        <strong>Hinweis:</strong> Dies ist eine Demo-Version. Die Checkout-Funktion wird in Kürze verfügbar sein.
-                      </p>
-                    </div>
-                    
-                    <Link 
-                      href="/#kontakt"
+
+                    <Link
+                      href="/shop/checkout"
                       className="block w-full text-center bg-white text-orange-600 px-6 py-4 rounded-xl font-bold hover:bg-orange-50 transition-all shadow-lg hover:shadow-xl mb-3"
                     >
-                      Jetzt anfragen
+                      Zur Kasse
                     </Link>
-                    
-                    <Link 
+
+                    <Link
                       href="/shop"
                       className="block w-full text-center border-2 border-white text-white px-6 py-3 rounded-xl font-bold hover:bg-white/10 transition-all"
                     >

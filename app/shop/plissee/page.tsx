@@ -5,12 +5,14 @@ import Footer from '@/components/Footer';
 import AddToCartModal from '@/components/AddToCartModal';
 import { useState } from 'react';
 import Link from 'next/link';
+import { useCart } from '@/lib/hooks/use-cart';
 
 export default function PlisseeKonfigurator() {
   const [height, setHeight] = useState(1000);
   const [width, setWidth] = useState(1200);
   const [option, setOption] = useState('sonnenschutz');
   const [showModal, setShowModal] = useState(false);
+  const { addItemLocal } = useCart();
 
   const options = [
     { id: 'sonnenschutz', name: 'Sonnenschutz', description: 'Lichtdurchlässig, schützt vor Sonne', price: 0 },
@@ -35,12 +37,8 @@ export default function PlisseeKonfigurator() {
       option: options.find(o => o.id === option)?.name,
       price: calculatePrice()
     };
-    
-    const cart = JSON.parse(localStorage.getItem('cart') || '[]');
-    cart.push(item);
-    localStorage.setItem('cart', JSON.stringify(cart));
-    
-    window.dispatchEvent(new Event('cartUpdated'));
+
+    addItemLocal(item);
     setShowModal(true);
   };
 

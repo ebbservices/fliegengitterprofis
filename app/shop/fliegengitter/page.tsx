@@ -5,6 +5,7 @@ import Footer from '@/components/Footer';
 import AddToCartModal from '@/components/AddToCartModal';
 import { useState } from 'react';
 import Link from 'next/link';
+import { useCart } from '@/lib/hooks/use-cart';
 
 export default function FliegengitterKonfigurator() {
   const [height, setHeight] = useState(1000);
@@ -15,6 +16,7 @@ export default function FliegengitterKonfigurator() {
   const [frameType, setFrameType] = useState('aluminium');
   const [meshType, setMeshType] = useState('standard');
   const [showModal, setShowModal] = useState(false);
+  const { addItemLocal } = useCart();
 
   const standardColors = [
     { id: 'weiss', name: 'Weiß (RAL 9016)', price: 0 },
@@ -56,12 +58,8 @@ export default function FliegengitterKonfigurator() {
       meshType: meshTypes.find(m => m.id === meshType)?.name,
       price: calculatePrice()
     };
-    
-    const cart = JSON.parse(localStorage.getItem('cart') || '[]');
-    cart.push(item);
-    localStorage.setItem('cart', JSON.stringify(cart));
-    
-    window.dispatchEvent(new Event('cartUpdated'));
+
+    addItemLocal(item);
     setShowModal(true);
   };
 

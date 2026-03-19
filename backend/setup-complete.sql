@@ -17,7 +17,7 @@
 -- =============================================
 -- BLOCK 1: User erstellen
 -- =============================================
-CREATE USER fliegengitter_user WITH PASSWORD 'IldieFliegengitterProfis2025!#';
+CREATE USER fliegengitter_user WITH PASSWORD 'CHANGE_ME_IN_PRODUCTION';
 -- Falls Fehler "role already exists" - ignorieren und weitermachen
 
 
@@ -86,8 +86,8 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON FUNCTIONS TO fliegengitte
 -- =============================================
 -- 
 -- Connection Strings:
--- Dev:  postgresql://fliegengitter_user:IldieFliegengitterProfis2025!#@10.0.0.6:5432/diefliegengitterprofis_dev
--- Prod: postgresql://fliegengitter_user:IldieFliegengitterProfis2025!#@10.0.0.6:5432/diefliegengitterprofis_prod
+-- Dev:  postgresql://fliegengitter_user:<PASSWORD>@10.0.0.6:5432/diefliegengitterprofis_dev
+-- Prod: postgresql://fliegengitter_user:<PASSWORD>@10.0.0.6:5432/diefliegengitterprofis_prod
 -- 
 -- Nächster Schritt:
 -- kubectl apply -f ../k8s/redis-deployment.yaml

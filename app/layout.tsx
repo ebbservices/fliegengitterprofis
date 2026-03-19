@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import { Open_Sans } from "next/font/google";
 import "./globals.css";
+import { CartProvider } from "@/lib/context/cart-context";
+import { AuthProvider } from "@/lib/context/auth-context";
+import CookieConsent from "@/components/CookieConsent";
 
 const openSans = Open_Sans({
   subsets: ["latin"],
@@ -21,7 +24,12 @@ export default function RootLayout({
   return (
     <html lang="de">
       <body className={`${openSans.className} antialiased`}>
-        {children}
+        <AuthProvider>
+          <CartProvider>
+            {children}
+            <CookieConsent />
+          </CartProvider>
+        </AuthProvider>
       </body>
     </html>
   );

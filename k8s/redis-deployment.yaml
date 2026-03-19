@@ -24,8 +24,11 @@ data:
     
     # Netzwerk
     bind 0.0.0.0
-    protected-mode no
+    protected-mode yes
     port 6379
+
+    # Authentifizierung (Passwort aus K8s Secret setzen)
+    # requirepass wird via --requirepass CLI-Flag gesetzt
     
     # Performance
     tcp-backlog 511

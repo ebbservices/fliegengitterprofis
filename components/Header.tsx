@@ -2,32 +2,14 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import { useCart } from '@/lib/hooks/use-cart';
+import { useAuth } from '@/lib/hooks/use-auth';
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [cartCount, setCartCount] = useState(0);
-
-  useEffect(() => {
-    updateCartCount();
-    
-    const handleStorage = () => {
-      updateCartCount();
-    };
-    
-    window.addEventListener('storage', handleStorage);
-    window.addEventListener('cartUpdated', handleStorage);
-    
-    return () => {
-      window.removeEventListener('storage', handleStorage);
-      window.removeEventListener('cartUpdated', handleStorage);
-    };
-  }, []);
-
-  const updateCartCount = () => {
-    const cart = JSON.parse(localStorage.getItem('cart') || '[]');
-    setCartCount(cart.length);
-  };
+  const { cartCount } = useCart();
+  const { isAuthenticated, customer } = useAuth();
 
   return (
     <header className="fixed top-0 left-0 right-0 bg-white shadow-sm z-50">
@@ -86,6 +68,16 @@ export default function Header() {
             <Link href="/shop" className="block py-3 lg:py-0 text-slate-700 hover:text-orange-500 transition-all font-medium text-sm relative group">
               Shop
               <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-orange-500 group-hover:w-full transition-all duration-300"></span>
+            </Link>
+            <Link href="/konto" className="block py-3 lg:py-0 text-slate-700 hover:text-orange-500 transition-all relative group" title={isAuthenticated ? 'Mein Konto' : 'Anmelden'}>
+              <span className="flex items-center gap-1">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+                <span className="lg:hidden text-sm font-medium">
+                  {isAuthenticated ? (customer?.first_name || 'Konto') : 'Anmelden'}
+                </span>
+              </span>
             </Link>
             <Link href="/shop/warenkorb" className="block py-3 lg:py-0 text-slate-700 hover:text-orange-500 transition-all relative group" title="Warenkorb">
               <span className="flex items-center gap-1">

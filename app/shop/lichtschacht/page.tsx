@@ -5,12 +5,14 @@ import Footer from '@/components/Footer';
 import AddToCartModal from '@/components/AddToCartModal';
 import { useState } from 'react';
 import Link from 'next/link';
+import { useCart } from '@/lib/hooks/use-cart';
 
 export default function LichtschachtKonfigurator() {
   const [height, setHeight] = useState(800);
   const [width, setWidth] = useState(1000);
   const [color, setColor] = useState('verzinkt');
   const [showModal, setShowModal] = useState(false);
+  const { addItemLocal } = useCart();
 
   const colors = [
     { id: 'verzinkt', name: 'Verzinkt', description: 'Klassisch, rostfrei', price: 0 },
@@ -35,12 +37,8 @@ export default function LichtschachtKonfigurator() {
       color: colors.find(c => c.id === color)?.name,
       price: calculatePrice()
     };
-    
-    const cart = JSON.parse(localStorage.getItem('cart') || '[]');
-    cart.push(item);
-    localStorage.setItem('cart', JSON.stringify(cart));
-    
-    window.dispatchEvent(new Event('cartUpdated'));
+
+    addItemLocal(item);
     setShowModal(true);
   };
 
