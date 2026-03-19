@@ -277,6 +277,12 @@ export default async function seedDemoData({ container }: ExecArgs) {
           currency_code: "eur",
           countries: ["de"],
           payment_providers: ["pp_system_default"],
+          metadata: {
+            shipping_cost_cents: 590,
+            free_shipping_threshold_cents: null,
+            delivery_days_min: 10,
+            delivery_days_max: 14,
+          },
         },
       ],
     },
@@ -395,7 +401,7 @@ export default async function seedDemoData({ container }: ExecArgs) {
         shipping_profile_id: shippingProfile.id,
         type: {
           label: "Standard",
-          description: "Lieferung in 5-7 Werktagen.",
+          description: "Individuell hergestellt und versendet.",
           code: "standard",
         },
         prices: [
@@ -406,40 +412,6 @@ export default async function seedDemoData({ container }: ExecArgs) {
           {
             region_id: region.id,
             amount: 590,
-          },
-        ],
-        rules: [
-          {
-            attribute: "enabled_in_store",
-            value: "true",
-            operator: "eq",
-          },
-          {
-            attribute: "is_return",
-            value: "false",
-            operator: "eq",
-          },
-        ],
-      },
-      {
-        name: "Expressversand",
-        price_type: "flat",
-        provider_id: "manual_manual",
-        service_zone_id: fulfillmentSet.service_zones[0].id,
-        shipping_profile_id: shippingProfile.id,
-        type: {
-          label: "Express",
-          description: "Lieferung in 2-3 Werktagen.",
-          code: "express",
-        },
-        prices: [
-          {
-            currency_code: "eur",
-            amount: 1490,
-          },
-          {
-            region_id: region.id,
-            amount: 1490,
           },
         ],
         rules: [
