@@ -1,4 +1,5 @@
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http";
+import { sendOrderConfirmation, sendAdminNotification } from "../../../lib/email";
 
 interface OrderItem {
   product: string;
@@ -103,6 +104,34 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
         source: "webshop",
       },
     });
+
+    // Emails senden (async, blockiert nicht die Response)
+    const subtotal = body.items.reduce((sum, i) => sum + parseFloat(i.price), 0);
+    const shippingEur = body.shipping_cost_cents / 100;
+    const total = subtotal + shippingEur;
+
+    const emailData = {
+      orderId: order.id,
+      displayId: order.display_id ?? order.id,
+      email: body.email,
+      firstName: body.billing_address.first_name,
+      lastName: body.billing_address.last_name,
+      address: body.billing_address,
+      items: body.items.map((i) => ({
+        title: i.product,
+        bezeichnung: i.bezeichnung,
+        height: i.height,
+        width: i.width,
+        price: i.price,
+        selections: i.selections,
+      })),
+      subtotal: subtotal.toFixed(2),
+      shippingCost: shippingEur.toFixed(2),
+      total: total.toFixed(2),
+    };
+
+    sendOrderConfirmation(emailData).catch(() => {});
+    sendAdminNotification(emailData).catch(() => {});
 
     return res.json({
       order_id: order.id,
