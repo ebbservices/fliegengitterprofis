@@ -28,15 +28,12 @@ interface Cart {
   shipping_total: number;
 }
 
-interface LocalCartItem {
+export interface LocalCartItem {
   product: string;
   height: number;
   width: number;
-  color?: string;
-  frameType?: string;
-  meshType?: string;
-  option?: string;
   price: string;
+  [key: string]: string | number | undefined;
 }
 
 export interface CartContextValue {
@@ -122,7 +119,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     async function init() {
       setIsLoading(true);
       try {
-        const response = await fetch(`${MEDUSA_BACKEND_URL}/health`, {
+        const response = await fetch(`${MEDUSA_BACKEND_URL}/store/products?limit=0`, {
           signal: AbortSignal.timeout(3000),
         });
         if (response.ok) {
@@ -201,7 +198,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setLocalCart((prev) => {
       const updated = [...prev, item];
       localStorage.setItem('cart', JSON.stringify(updated));
-      window.dispatchEvent(new Event('cartUpdated'));
       return updated;
     });
   }, []);
@@ -231,7 +227,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setLocalCart((prev) => {
       const updated = prev.filter((_, i) => i !== index);
       localStorage.setItem('cart', JSON.stringify(updated));
-      window.dispatchEvent(new Event('cartUpdated'));
       return updated;
     });
   }, []);
@@ -254,7 +249,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
     } else {
       localStorage.removeItem('cart');
       setLocalCart([]);
-      window.dispatchEvent(new Event('cartUpdated'));
     }
   }, [useMedusa]);
 

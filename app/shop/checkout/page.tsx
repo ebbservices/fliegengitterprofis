@@ -302,10 +302,12 @@ export default function CheckoutPage() {
                         <div>
                           <p className="font-semibold text-slate-900">{item.product}</p>
                           <p className="text-sm text-slate-600">{item.height} × {item.width} mm</p>
-                          {item.color && <p className="text-sm text-slate-600">Farbe: {item.color}</p>}
-                          {item.frameType && <p className="text-sm text-slate-600">Rahmen: {item.frameType}</p>}
-                          {item.meshType && <p className="text-sm text-slate-600">Gitter: {item.meshType}</p>}
-                          {item.option && <p className="text-sm text-slate-600">Option: {item.option}</p>}
+                          {Object.entries(item)
+                            .filter(([key]) => !['product', 'height', 'width', 'price'].includes(key))
+                            .filter(([, value]) => value !== undefined && value !== '')
+                            .map(([key, value]) => (
+                              <p key={key} className="text-sm text-slate-600">{key}: {String(value)}</p>
+                            ))}
                         </div>
                         <p className="font-bold text-slate-900">{item.price} €</p>
                       </div>

@@ -151,7 +151,7 @@ if (-not $SkipDeploy) {
     
     # Apply Kubernetes manifests
     Write-Host "Applying Kubernetes manifests..." -ForegroundColor Cyan
-    
+
     # Update image tag in deployment
     $deploymentFile = Join-Path $ManifestsDir "deployment.yaml"
     if (Test-Path $deploymentFile) {
@@ -160,9 +160,24 @@ if (-not $SkipDeploy) {
         $deploymentContent = $deploymentContent -replace 'image: .*fliegengitter-shop:.*', "image: $FullImageName"
         $deploymentContent | Set-Content $deploymentFile
     }
-    
-    # Apply all manifests
-    kubectl apply -f $ManifestsDir -n $Namespace
+
+    # Redis: only deploy if not already running
+    $tempErrorPref2 = $ErrorActionPreference
+    $ErrorActionPreference = "SilentlyContinue"
+    kubectl get deployment redis -n $Namespace 2>&1 | Out-Null
+    $redisCheck = $LASTEXITCODE
+    $ErrorActionPreference = $tempErrorPref2
+
+    if ($redisCheck -ne 0) {
+        Write-Step "Redis not found, deploying..."
+        kubectl apply -f (Join-Path $ManifestsDir "redis-deployment.yaml") -n $Namespace
+    } else {
+        Write-Host "⊘ Redis already running, skipping redis-deployment.yaml" -ForegroundColor Yellow
+    }
+
+    # Apply app manifests (excluding redis which is handled above)
+    kubectl apply -f (Join-Path $ManifestsDir "deployment.yaml") -n $Namespace
+    kubectl apply -f (Join-Path $ManifestsDir "backend-deployment.yaml") -n $Namespace
     if ($LASTEXITCODE -ne 0) {
         throw "Kubernetes deployment failed"
     }

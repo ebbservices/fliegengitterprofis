@@ -44,7 +44,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     async function init() {
       setIsLoading(true);
       try {
-        const healthResponse = await fetch(`${MEDUSA_BACKEND_URL}/health`, {
+        const healthResponse = await fetch(`${MEDUSA_BACKEND_URL}/store/products?limit=0`, {
           signal: AbortSignal.timeout(3000),
         });
         if (!healthResponse.ok) throw new Error('Backend not healthy');

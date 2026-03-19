@@ -83,10 +83,12 @@ export default function WarenkorbPage() {
                           </h3>
                           <div className="space-y-1 text-sm text-slate-600">
                             <p><strong>Maße:</strong> {item.height} × {item.width} mm</p>
-                            {item.color && <p><strong>Farbe:</strong> {item.color}</p>}
-                            {item.frameType && <p><strong>Rahmen:</strong> {item.frameType}</p>}
-                            {item.meshType && <p><strong>Gittertyp:</strong> {item.meshType}</p>}
-                            {item.option && <p><strong>Option:</strong> {item.option}</p>}
+                            {Object.entries(item)
+                              .filter(([key]) => !['product', 'height', 'width', 'price'].includes(key))
+                              .filter(([, value]) => value !== undefined && value !== '')
+                              .map(([key, value]) => (
+                                <p key={key}><strong>{key}:</strong> {String(value)}</p>
+                              ))}
                           </div>
                         </div>
                         <div className="text-right">
