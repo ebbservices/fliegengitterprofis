@@ -111,12 +111,9 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
     (sum, s) => sum + s.amount_cents,
     0
   );
-  const total_before_min = base_price_cents + surcharges_total;
-  const min_price_applied = total_before_min < metadata.pricing.min_price_cents;
-  const price_cents = Math.max(
-    total_before_min,
-    metadata.pricing.min_price_cents
-  );
+  const base_after_min = Math.max(base_price_cents, metadata.pricing.min_price_cents);
+  const min_price_applied = base_price_cents < metadata.pricing.min_price_cents;
+  const price_cents = base_after_min + surcharges_total;
 
   return res.json({
     price_cents,
@@ -125,7 +122,7 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
       area_sqm: Math.round(area_sqm * 10000) / 10000,
       base_price_cents,
       surcharges,
-      total_before_min_cents: total_before_min,
+      base_after_min_cents: base_after_min,
       min_price_applied,
     },
   });

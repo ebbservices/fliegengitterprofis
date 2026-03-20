@@ -8,7 +8,7 @@ import {
   type ReactNode,
 } from 'react';
 import { sdk } from '@/lib/medusa';
-import { MEDUSA_BACKEND_URL } from '@/lib/config';
+import { MEDUSA_BACKEND_URL, MEDUSA_PUBLISHABLE_KEY } from '@/lib/config';
 
 interface Customer {
   id: string;
@@ -44,8 +44,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     async function init() {
       setIsLoading(true);
       try {
+        const healthHeaders: Record<string, string> = {};
+        if (MEDUSA_PUBLISHABLE_KEY) {
+          healthHeaders['x-publishable-api-key'] = MEDUSA_PUBLISHABLE_KEY;
+        }
         const healthResponse = await fetch(`${MEDUSA_BACKEND_URL}/store/products?limit=0`, {
           signal: AbortSignal.timeout(3000),
+          headers: healthHeaders,
         });
         if (!healthResponse.ok) throw new Error('Backend not healthy');
         setBackendAvailable(true);

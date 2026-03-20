@@ -3,6 +3,13 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
+# Build args for Next.js (baked in at build time)
+ARG NEXT_PUBLIC_MEDUSA_BACKEND_URL=https://admin.diefliegengitterprofis.mobatix.de
+ARG NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY
+
+ENV NEXT_PUBLIC_MEDUSA_BACKEND_URL=$NEXT_PUBLIC_MEDUSA_BACKEND_URL
+ENV NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY=$NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY
+
 # Copy package files
 COPY package*.json ./
 

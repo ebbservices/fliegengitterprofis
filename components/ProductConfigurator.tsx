@@ -88,10 +88,8 @@ export default function ProductConfigurator({
       }
     }
 
-    const totalCents = Math.max(
-      baseCents + surchargeTotal,
-      metadata.pricing.min_price_cents
-    );
+    const baseAfterMin = Math.max(baseCents, metadata.pricing.min_price_cents);
+    const totalCents = baseAfterMin + surchargeTotal;
     return (totalCents / 100).toFixed(2);
   };
 

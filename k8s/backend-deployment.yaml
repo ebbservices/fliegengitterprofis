@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: medusa-backend
-        image: registry.mobatix.de/medusa-backend:latest
+        image: registry.mobatix.de/medusa-backend:v2.0.4
         ports:
         - containerPort: 9000
         envFrom:
@@ -93,3 +93,8 @@ spec:
             name: medusa-backend
             port:
               number: 9000
+
+
+
+
+

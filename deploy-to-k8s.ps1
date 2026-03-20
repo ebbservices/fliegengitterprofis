@@ -1,21 +1,9 @@
-﻿#!/usr/bin/env pwsh
+#!/usr/bin/env pwsh
 <#
 .SYNOPSIS
-    Build, push and deploy the fliegengitter-shop application to Kubernetes
-.DESCRIPTION
-    This script builds the Docker image, pushes it to a registry, and deploys it to Kubernetes
-.PARAMETER Registry
-    Docker registry URL (default: registry.mobatix.de)
-.PARAMETER ImageName
-    Docker image name (default: mobatix-website)
+    Build, push and deploy frontend + backend to Kubernetes
 .PARAMETER Tag
     Docker image tag (default: latest)
-.PARAMETER Namespace
-    Kubernetes namespace (default: default)
-.PARAMETER RegistryUsername
-    Docker registry username (default: admin)
-.PARAMETER RegistryPassword
-    Docker registry password (read from $env:REGISTRY_PASSWORD if not specified)
 .PARAMETER SkipBuild
     Skip Docker build step
 .PARAMETER SkipPush
@@ -23,142 +11,138 @@
 .PARAMETER SkipDeploy
     Skip Kubernetes deployment step
 .EXAMPLE
-    .\deploy-to-k8s.ps1
-.EXAMPLE
-    .\deploy-to-k8s.ps1 -Tag v1.0.0
-.EXAMPLE
-    .\deploy-to-k8s.ps1 -SkipBuild -SkipPush
+    .\deploy-to-k8s.ps1 -Tag v2.0.0
 #>
 
 param(
     [string]$Registry = "registry.mobatix.de",
-    [string]$ImageName = "fliegengitter-shop",
     [string]$Tag = "latest",
     [string]$Namespace = "default",
     [string]$RegistryUsername = "admin",
-    [string]$RegistryPassword = $env:REGISTRY_PASSWORD,
+    [string]$RegistryPassword = $(if ($env:REGISTRY_PASSWORD) { $env:REGISTRY_PASSWORD } else { "MobatixRegistry2026!" }),
     [switch]$SkipBuild,
     [switch]$SkipPush,
-    [switch]$SkipDeploy
+    [switch]$SkipDeploy,
+    [switch]$FrontendOnly,
+    [switch]$BackendOnly
 )
 
 $ErrorActionPreference = "Stop"
 
-# Colors for output
-function Write-Step {
-    param([string]$Message)
-    Write-Host "`n===> $Message" -ForegroundColor Cyan
-}
+function Write-Step { param([string]$Message); Write-Host "`n===> $Message" -ForegroundColor Cyan }
+function Write-Success { param([string]$Message); Write-Host "[OK] $Message" -ForegroundColor Green }
 
-function Write-Success {
-    param([string]$Message)
-    Write-Host "✓ $Message" -ForegroundColor Green
-}
-
-function Write-Error {
-    param([string]$Message)
-    Write-Host "✗ $Message" -ForegroundColor Red
-}
-
-# Get script directory
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $ManifestsDir = Join-Path $ScriptDir "k8s"
 
-# Full image name
-$FullImageName = "${Registry}/${ImageName}:${Tag}"
+$FrontendImage = "${Registry}/fliegengitter-shop:${Tag}"
+$BackendImage = "${Registry}/medusa-backend:${Tag}"
+
+# Production URLs
+$MedusaBackendUrl = "https://admin.diefliegengitterprofis.mobatix.de"
+$MedusaPublishableKey = "pk_7d7c40a9447f172851cac9face12b4d8c1078dce64cb97470dc4b585a1bc7074"
+
+$BuildFrontend = -not $BackendOnly
+$BuildBackend = -not $FrontendOnly
 
 Write-Host @"
 
 *****************************************************************
-*         Fliegengitter Shop Kubernetes Deployment         *
+*     Fliegengitter Shop — Kubernetes Deployment                *
 *****************************************************************
 
-Registry:   $Registry
-Image:      $ImageName
 Tag:        $Tag
-Full Image: $FullImageName
+Frontend:   $FrontendImage $(if (-not $BuildFrontend) { "(skipped)" })
+Backend:    $BackendImage $(if (-not $BuildBackend) { "(skipped)" })
 Namespace:  $Namespace
 
 "@ -ForegroundColor Yellow
 
-# Step 1: Build Docker Image
+# ========== BUILD ==========
 if (-not $SkipBuild) {
-    Write-Step "Building Docker image..."
-    
-    Push-Location $ScriptDir
-    try {
-        docker build -t $FullImageName -f Dockerfile .
-        if ($LASTEXITCODE -ne 0) {
-            throw "Docker build failed"
-        }
-        Write-Success "Docker image built successfully"
+
+    if ($BuildFrontend) {
+        Write-Step "Building Frontend Docker image..."
+        Push-Location $ScriptDir
+        try {
+            docker build -t $FrontendImage `
+                --build-arg NEXT_PUBLIC_MEDUSA_BACKEND_URL=$MedusaBackendUrl `
+                --build-arg NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY=$MedusaPublishableKey `
+                -f Dockerfile .
+            if ($LASTEXITCODE -ne 0) { throw "Frontend Docker build failed" }
+            Write-Success "Frontend image built"
+        } finally { Pop-Location }
     }
-    finally {
-        Pop-Location
+
+    if ($BuildBackend) {
+        Write-Step "Building Backend Docker image..."
+        Push-Location (Join-Path $ScriptDir "backend")
+        try {
+            docker build -t $BackendImage -f Dockerfile .
+            if ($LASTEXITCODE -ne 0) { throw "Backend Docker build failed" }
+            Write-Success "Backend image built"
+        } finally { Pop-Location }
     }
-}
-else {
+
+} else {
     Write-Host "⊘ Skipping Docker build" -ForegroundColor Yellow
 }
 
-# Step 2: Login to Docker Registry
+# ========== PUSH ==========
 if (-not $SkipPush) {
     Write-Step "Logging in to Docker registry..."
-    
-    # Login to registry (suppress warnings)
     $tempErrorPref = $ErrorActionPreference
     $ErrorActionPreference = "SilentlyContinue"
     docker login $Registry -u $RegistryUsername -p $RegistryPassword 2>&1 | Out-Null
     $loginResult = $LASTEXITCODE
     $ErrorActionPreference = $tempErrorPref
-    
-    if ($loginResult -ne 0) {
-        throw "Docker login failed. Please check registry credentials."
-    }
-    Write-Success "Logged in to registry successfully"
-}
+    if ($loginResult -ne 0) { throw "Docker login failed" }
+    Write-Success "Logged in to registry"
 
-# Step 3: Push Docker Image
-if (-not $SkipPush) {
-    Write-Step "Pushing Docker image to registry..."
-    
-    docker push $FullImageName
-    if ($LASTEXITCODE -ne 0) {
-        throw "Docker push failed"
+    if ($BuildFrontend) {
+        Write-Step "Pushing Frontend image..."
+        docker push $FrontendImage
+        if ($LASTEXITCODE -ne 0) { throw "Frontend push failed" }
+        Write-Success "Frontend image pushed"
     }
-    Write-Success "Docker image pushed successfully"
-}
-else {
+
+    if ($BuildBackend) {
+        Write-Step "Pushing Backend image..."
+        docker push $BackendImage
+        if ($LASTEXITCODE -ne 0) { throw "Backend push failed" }
+        Write-Success "Backend image pushed"
+    }
+
+} else {
     Write-Host "⊘ Skipping Docker push" -ForegroundColor Yellow
 }
 
-# Step 4: Deploy to Kubernetes
+# ========== DEPLOY ==========
 if (-not $SkipDeploy) {
     Write-Step "Deploying to Kubernetes..."
-    
-    # Check if kubectl is available
+
     $kubectlCheck = Get-Command kubectl -ErrorAction SilentlyContinue
-    if (-not $kubectlCheck) {
-        throw "kubectl not found. Please install kubectl first."
-    }
-    
-    # Check if namespace exists, create if not
+    if (-not $kubectlCheck) { throw "kubectl not found" }
+
+    # Namespace
     $namespaceExists = kubectl get namespace $Namespace 2>$null
     if ($LASTEXITCODE -ne 0) {
-        Write-Host "Creating namespace $Namespace..." -ForegroundColor Yellow
         kubectl create namespace $Namespace
     }
-    
-    # Apply Kubernetes manifests
-    Write-Host "Applying Kubernetes manifests..." -ForegroundColor Cyan
 
-    # Update image tag in deployment
+    # Update image tags in manifests
     $deploymentFile = Join-Path $ManifestsDir "deployment.yaml"
     if (Test-Path $deploymentFile) {
-        # Read deployment file and replace image
-        $deploymentContent = Get-Content $deploymentFile -Raw
-        $deploymentContent = $deploymentContent -replace 'image: .*fliegengitter-shop:.*', "image: $FullImageName"
-        $deploymentContent | Set-Content $deploymentFile
+        $content = Get-Content $deploymentFile -Raw
+        $content = $content -replace 'image: .*fliegengitter-shop:.*', "image: $FrontendImage"
+        $content | Set-Content $deploymentFile
+    }
+
+    $backendFile = Join-Path $ManifestsDir "backend-deployment.yaml"
+    if (Test-Path $backendFile) {
+        $content = Get-Content $backendFile -Raw
+        $content = $content -replace 'image: .*medusa-backend:.*', "image: $BackendImage"
+        $content | Set-Content $backendFile
     }
 
     # Redis: only deploy if not already running
@@ -172,65 +156,54 @@ if (-not $SkipDeploy) {
         Write-Step "Redis not found, deploying..."
         kubectl apply -f (Join-Path $ManifestsDir "redis-deployment.yaml") -n $Namespace
     } else {
-        Write-Host "⊘ Redis already running, skipping redis-deployment.yaml" -ForegroundColor Yellow
+        Write-Host "⊘ Redis already running" -ForegroundColor Yellow
     }
 
-    # Apply app manifests (excluding redis which is handled above)
-    kubectl apply -f (Join-Path $ManifestsDir "deployment.yaml") -n $Namespace
-    kubectl apply -f (Join-Path $ManifestsDir "backend-deployment.yaml") -n $Namespace
-    if ($LASTEXITCODE -ne 0) {
-        throw "Kubernetes deployment failed"
+    # Deploy
+    if ($BuildFrontend) {
+        kubectl apply -f $deploymentFile -n $Namespace
+        Write-Success "Frontend manifest applied"
     }
-    
-    Write-Success "Kubernetes manifests applied successfully"
-    
-    # Wait for deployment to be ready
-    Write-Step "Waiting for deployment to be ready..."
-    kubectl rollout status deployment/fliegengitter-shop -n $Namespace --timeout=300s
-    
-    if ($LASTEXITCODE -eq 0) {
-        Write-Success "Deployment is ready!"
+
+    if ($BuildBackend) {
+        kubectl apply -f $backendFile -n $Namespace
+        Write-Success "Backend manifest applied"
     }
-    else {
-        Write-Error "Deployment rollout failed or timed out"
-        Write-Host "`nChecking pod status..." -ForegroundColor Yellow
-        kubectl get pods -n $Namespace -l app=fliegengitter-shop
-        Write-Host "`nChecking pod logs..." -ForegroundColor Yellow
-        kubectl logs -n $Namespace -l app=fliegengitter-shop --tail=50
-        exit 1
+
+    # Wait for rollouts
+    if ($BuildFrontend) {
+        Write-Step "Waiting for Frontend rollout..."
+        kubectl rollout status deployment/fliegengitter-shop -n $Namespace --timeout=300s
     }
-    
-    # Show deployment info
-    Write-Step "Deployment Information"
+
+    if ($BuildBackend) {
+        Write-Step "Waiting for Backend rollout..."
+        kubectl rollout status deployment/medusa-backend -n $Namespace --timeout=300s
+    }
+
+    # Status
+    Write-Step "Deployment Status"
     Write-Host "`nPods:" -ForegroundColor Cyan
-    kubectl get pods -n $Namespace -l app=mobatix-website
-    
+    kubectl get pods -n $Namespace
     Write-Host "`nServices:" -ForegroundColor Cyan
-    kubectl get svc -n $Namespace -l app=fliegengitter-shop
-    
+    kubectl get svc -n $Namespace
     Write-Host "`nIngress:" -ForegroundColor Cyan
-    kubectl get ingress -n $Namespace fliegengitter-shop-ingress
-    
+    kubectl get ingress -n $Namespace
+
     Write-Host @"
 
 *****************************************************************
-*                    Deployment Complete!                       *
+*                    Deployment Complete!                        *
 *****************************************************************
 
-Your application should be available at:
-  • https://dev.diefliegengitterprofis.mobatix.de
-
-To view logs:
-  kubectl logs -n $Namespace -l app=fliegengitter-shop -f
-
-To check status:
-  kubectl get all -n $Namespace -l app=fliegengitter-shop
+Frontend:  https://dev.diefliegengitterprofis.mobatix.de
+Backend:   https://admin.diefliegengitterprofis.mobatix.de
+Admin:     https://admin.diefliegengitterprofis.mobatix.de/admin
 
 "@ -ForegroundColor Green
-}
-else {
+
+} else {
     Write-Host "⊘ Skipping Kubernetes deployment" -ForegroundColor Yellow
 }
 
 Write-Success "All done!"
-
