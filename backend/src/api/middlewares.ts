@@ -8,6 +8,11 @@ export default defineMiddlewares({
       middlewares: [],
     },
     {
+      matcher: "/store/calculate-price",
+      method: "POST",
+      middlewares: [],
+    },
+    {
       matcher: "/store/place-order",
       method: "POST",
       middlewares: [],

@@ -23,7 +23,7 @@ spec:
           mountPath: /app/static
       containers:
       - name: medusa-backend
-        image: registry.mobatix.de/medusa-backend:v2.1.4
+        image: registry.mobatix.de/medusa-backend:v2.1.6
         ports:
         - containerPort: 9000
         envFrom:
@@ -121,6 +121,9 @@ spec:
   resources:
     requests:
       storage: 5Gi
+
+
+
 
 
 

@@ -288,6 +288,32 @@ export default function CheckoutPage() {
         headers['x-publishable-api-key'] = MEDUSA_PUBLISHABLE_KEY;
       }
 
+      // Schritt 1: Bei Kontoerstellung ZUERST registrieren (vor der Bestellung)
+      let newCustomerId: string | null = null;
+      if (accountMode === 'create-account') {
+        const regResult = await register({
+          email,
+          password,
+          first_name: billingAddress.first_name,
+          last_name: billingAddress.last_name,
+        });
+
+        if (!regResult.success) {
+          const errorMsg = regResult.error || '';
+          if (errorMsg.toLowerCase().includes('already exists') || errorMsg.toLowerCase().includes('bereits')) {
+            setError('Es existiert bereits ein Konto mit dieser E-Mail-Adresse. Bitte melden Sie sich an oder bestellen Sie als Gast.');
+            setStep('mode');
+          } else {
+            setError(`Kontoerstellung fehlgeschlagen: ${errorMsg}`);
+          }
+          setIsSubmitting(false);
+          return;
+        }
+
+        newCustomerId = regResult.customerId || null;
+      }
+
+      // Schritt 2: Bestellung aufgeben
       const orderItems = localCart.map((item) => {
         const selections: Record<string, string> = {};
         for (const [key, value] of Object.entries(item)) {
@@ -312,9 +338,11 @@ export default function CheckoutPage() {
         shipping_cost_cents: Math.round(getShippingCost() * 100),
       };
 
-      // Customer-ID mitsenden wenn eingeloggt
+      // Customer-ID mitsenden
       if (accountMode === 'logged-in' && customer?.id) {
         orderBody.customer_id = customer.id;
+      } else if (accountMode === 'create-account' && newCustomerId) {
+        orderBody.customer_id = newCustomerId;
       }
 
       const res = await fetch(`${MEDUSA_BACKEND_URL}/store/place-order`, {
@@ -330,38 +358,20 @@ export default function CheckoutPage() {
 
       const orderResult = await res.json();
 
-      // Konto erstellen wenn gewünscht
+      // Schritt 3: Bei Kontoerstellung — Order verknüpfen + Verifizierungs-Email
       let finalMode = accountMode;
-      if (accountMode === 'create-account') {
+      if (accountMode === 'create-account' && newCustomerId) {
         try {
-          const regResult = await register({
-            email,
-            password,
-            first_name: billingAddress.first_name,
-            last_name: billingAddress.last_name,
+          await fetch(`${MEDUSA_BACKEND_URL}/store/link-order-and-verify`, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({
+              customer_id: newCustomerId,
+              order_id: orderResult.order_id,
+            }),
           });
-
-          if (regResult.success && regResult.customerId) {
-            // Order dem neuen Kunden zuordnen + Verifizierungs-Email
-            try {
-              await fetch(`${MEDUSA_BACKEND_URL}/store/link-order-and-verify`, {
-                method: 'POST',
-                headers,
-                body: JSON.stringify({
-                  customer_id: regResult.customerId,
-                  order_id: orderResult.order_id,
-                }),
-              });
-            } catch {
-              console.error('Order-Zuordnung oder Verifizierung fehlgeschlagen');
-            }
-          } else {
-            console.error('Registrierung fehlgeschlagen:', regResult.error);
-            finalMode = 'guest';
-          }
         } catch {
-          console.error('Kontoerstellung fehlgeschlagen');
-          finalMode = 'guest';
+          // Verifizierung fehlgeschlagen — nicht kritisch, Bestellung ging durch
         }
       }
 

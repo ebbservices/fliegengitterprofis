@@ -7,7 +7,7 @@ import Image from 'next/image';
 import { useState } from 'react';
 import Link from 'next/link';
 import { useCart } from '@/lib/hooks/use-cart';
-import { MEDUSA_BACKEND_URL } from '@/lib/config';
+import { MEDUSA_BACKEND_URL, MEDUSA_PUBLISHABLE_KEY } from '@/lib/config';
 import type { ConfiguratorMetadata } from '@/lib/types';
 import type { LocalCartItem } from '@/lib/context/cart-context';
 
@@ -138,9 +138,13 @@ export default function ProductConfigurator({
         selectionMap[groupTitle] = selectedName;
       }
 
+      const calcHeaders: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (MEDUSA_PUBLISHABLE_KEY) {
+        calcHeaders['x-publishable-api-key'] = MEDUSA_PUBLISHABLE_KEY;
+      }
       const res = await fetch(`${MEDUSA_BACKEND_URL}/store/calculate-price`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: calcHeaders,
         body: JSON.stringify({
           product_id: productId,
           width,

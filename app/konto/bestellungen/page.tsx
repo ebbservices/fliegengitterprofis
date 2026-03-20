@@ -64,8 +64,8 @@ export default function BestellungenPage() {
     });
   };
 
-  const formatPrice = (cents: number) => {
-    return (cents / 100).toFixed(2).replace('.', ',') + ' €';
+  const formatPrice = (amount: number) => {
+    return amount.toFixed(2).replace('.', ',') + ' €';
   };
 
   return (
