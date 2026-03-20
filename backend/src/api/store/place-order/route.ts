@@ -24,6 +24,7 @@ interface PlaceOrderBody {
   };
   items: OrderItem[];
   shipping_cost_cents: number;
+  customer_id?: string;
 }
 
 export async function POST(req: MedusaRequest, res: MedusaResponse) {
@@ -71,6 +72,7 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
     const order = await orderModule.createOrders({
       region_id: region.id,
       email: body.email,
+      customer_id: body.customer_id || undefined,
       currency_code: region.currency_code,
       shipping_address: {
         first_name: body.billing_address.first_name,

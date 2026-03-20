@@ -15,6 +15,8 @@ export default async function PlisseePage() {
       productDescription="Stellen Sie Ihr individuelles Plissee zusammen"
       metadata={product.metadata}
       variantId={product.variants[0]?.id}
+      thumbnail={product.thumbnail}
+      images={product.images}
     />
   );
 }

@@ -15,6 +15,8 @@ export default async function LichtschachtPage() {
       productDescription="Stellen Sie Ihre individuelle Lichtschachtabdeckung zusammen"
       metadata={product.metadata}
       variantId={product.variants[0]?.id}
+      thumbnail={product.thumbnail}
+      images={product.images}
     />
   );
 }

@@ -12,5 +12,20 @@ export default defineMiddlewares({
       method: "POST",
       middlewares: [],
     },
+    {
+      matcher: "/store/contact",
+      method: "POST",
+      middlewares: [],
+    },
+    {
+      matcher: "/store/link-order-and-verify",
+      method: "POST",
+      middlewares: [],
+    },
+    {
+      matcher: "/store/verify-email",
+      method: "POST",
+      middlewares: [],
+    },
   ],
 });

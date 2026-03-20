@@ -13,5 +13,22 @@ module.exports = defineConfig({
       jwtSecret: process.env.JWT_SECRET ?? (() => { throw new Error("JWT_SECRET environment variable is not set") })(),
       cookieSecret: process.env.COOKIE_SECRET ?? (() => { throw new Error("COOKIE_SECRET environment variable is not set") })(),
     }
-  }
+  },
+  modules: [
+    {
+      resolve: "@medusajs/file",
+      options: {
+        providers: [
+          {
+            resolve: "@medusajs/file-local",
+            id: "local",
+            options: {
+              upload_dir: "static",
+              backend_url: (process.env.BACKEND_PUBLIC_URL || "http://localhost:9000") + "/static",
+            },
+          },
+        ],
+      },
+    },
+  ],
 })

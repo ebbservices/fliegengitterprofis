@@ -59,6 +59,8 @@ export const FALLBACK_PRODUCTS: Record<string, ProductData> = {
     description: 'Stellen Sie Ihr individuelles Fliegengitter zusammen',
     metadata: FLIEGENGITTER_METADATA,
     variants: [],
+    thumbnail: '/images/image-2.jpg',
+    images: [],
   },
   'plissee-nach-mass': {
     id: 'fallback-plissee',
@@ -67,6 +69,8 @@ export const FALLBACK_PRODUCTS: Record<string, ProductData> = {
     description: 'Stellen Sie Ihr individuelles Plissee zusammen',
     metadata: PLISSEE_METADATA,
     variants: [],
+    thumbnail: '/images/image-2.jpg',
+    images: [],
   },
   'lichtschachtabdeckung-nach-mass': {
     id: 'fallback-lichtschacht',
@@ -75,5 +79,7 @@ export const FALLBACK_PRODUCTS: Record<string, ProductData> = {
     description: 'Stellen Sie Ihre individuelle Lichtschachtabdeckung zusammen',
     metadata: LICHTSCHACHT_METADATA,
     variants: [],
+    thumbnail: '/images/image-2.jpg',
+    images: [],
   },
 };

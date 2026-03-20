@@ -6,8 +6,15 @@ import { useState } from 'react';
 import { useCart } from '@/lib/hooks/use-cart';
 import { useAuth } from '@/lib/hooks/use-auth';
 
+const SHOP_CATEGORIES = [
+  { name: 'Fliegengitter', href: '/shop/fliegengitter' },
+  { name: 'Plissee', href: '/shop/plissee' },
+  { name: 'Lichtschachtabdeckungen', href: '/shop/lichtschacht' },
+];
+
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isShopOpen, setIsShopOpen] = useState(false);
   const { cartCount } = useCart();
   const { isAuthenticated, customer } = useAuth();
 
@@ -65,10 +72,59 @@ export default function Header() {
               Kundenstimmen
               <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-orange-500 group-hover:w-full transition-all duration-300"></span>
             </a>
-            <Link href="/shop" className="block py-3 lg:py-0 text-slate-700 hover:text-orange-500 transition-all font-medium text-sm relative group">
-              Shop
-              <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-orange-500 group-hover:w-full transition-all duration-300"></span>
-            </Link>
+            {/* Desktop: Hover-Dropdown */}
+            <div className="hidden lg:block relative group/shop">
+              <Link href="/shop" className="flex items-center gap-1 text-slate-700 hover:text-orange-500 transition-all font-medium text-sm relative">
+                Shop
+                <svg className="w-3.5 h-3.5 transition-transform group-hover/shop:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </Link>
+              <div className="invisible group-hover/shop:visible opacity-0 group-hover/shop:opacity-100 transition-all duration-200 absolute top-full left-0 pt-2 z-50">
+                <div className="bg-white shadow-xl rounded-xl py-2 min-w-[220px] border border-gray-100">
+                  {SHOP_CATEGORIES.map((cat) => (
+                    <Link
+                      key={cat.href}
+                      href={cat.href}
+                      className="block px-4 py-2.5 text-sm text-slate-700 hover:bg-orange-50 hover:text-orange-600 transition-colors"
+                    >
+                      {cat.name}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            </div>
+            {/* Mobile: Toggle Sub-Items */}
+            <div className="lg:hidden">
+              <div className="flex items-center justify-between">
+                <Link href="/shop" onClick={() => setIsMenuOpen(false)} className="block py-3 text-slate-700 hover:text-orange-500 transition-all font-medium text-sm">
+                  Shop
+                </Link>
+                <button
+                  onClick={() => setIsShopOpen(!isShopOpen)}
+                  className="p-2 text-slate-500 hover:text-orange-500 transition-colors"
+                  aria-label="Kategorien anzeigen"
+                >
+                  <svg className={`w-4 h-4 transition-transform ${isShopOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+              </div>
+              {isShopOpen && (
+                <div className="pl-4 pb-2 space-y-1">
+                  {SHOP_CATEGORIES.map((cat) => (
+                    <Link
+                      key={cat.href}
+                      href={cat.href}
+                      onClick={() => { setIsMenuOpen(false); setIsShopOpen(false); }}
+                      className="block py-2 text-sm text-slate-600 hover:text-orange-500 transition-colors"
+                    >
+                      {cat.name}
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
             <Link href="/konto" className="block py-3 lg:py-0 text-slate-700 hover:text-orange-500 transition-all relative group" title={isAuthenticated ? 'Mein Konto' : 'Anmelden'}>
               <span className="flex items-center gap-1">
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">

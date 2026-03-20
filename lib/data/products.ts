@@ -16,6 +16,8 @@ export interface ProductData {
   description: string;
   metadata: ConfiguratorMetadata;
   variants: { id: string }[];
+  thumbnail: string | null;
+  images: { url: string }[];
 }
 
 export async function getProductByHandle(
@@ -25,7 +27,7 @@ export async function getProductByHandle(
     const backendUrl = getBackendUrl();
     const apiKey = getPublishableKey();
     console.log(`[products] Fetching from ${backendUrl}/store/products?handle=${handle} (key: ${apiKey ? apiKey.substring(0, 10) + '...' : 'MISSING'})`);
-    const url = `${backendUrl}/store/products?handle=${handle}&fields=id,title,handle,description,metadata,variants.id`;
+    const url = `${backendUrl}/store/products?handle=${handle}&fields=id,title,handle,description,metadata,variants.id,thumbnail,images.url`;
     const res = await fetch(url, {
       headers: {
         'x-publishable-api-key': apiKey,
@@ -51,6 +53,8 @@ export async function getProductByHandle(
       description: product.description ?? '',
       metadata: product.metadata as ConfiguratorMetadata,
       variants: product.variants ?? [],
+      thumbnail: (product.thumbnail as string) ?? null,
+      images: (product.images as { url: string }[]) ?? [],
     };
   } catch {
     return FALLBACK_PRODUCTS[handle] ?? null;
@@ -61,7 +65,7 @@ export async function getAllProducts(): Promise<ProductData[]> {
   try {
     const backendUrl = getBackendUrl();
     const apiKey = getPublishableKey();
-    const url = `${backendUrl}/store/products?fields=id,title,handle,description,metadata,variants.id`;
+    const url = `${backendUrl}/store/products?fields=id,title,handle,description,metadata,variants.id,thumbnail,images.url`;
     const res = await fetch(url, {
       headers: {
         'x-publishable-api-key': apiKey,
@@ -86,6 +90,8 @@ export async function getAllProducts(): Promise<ProductData[]> {
           description: (p.description as string) ?? '',
           metadata: p.metadata as ConfiguratorMetadata,
           variants: (p.variants as { id: string }[]) ?? [],
+          thumbnail: (p.thumbnail as string) ?? null,
+          images: (p.images as { url: string }[]) ?? [],
         })
       );
   } catch {

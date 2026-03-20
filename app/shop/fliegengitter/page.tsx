@@ -15,6 +15,8 @@ export default async function FliegengitterPage() {
       productDescription="Stellen Sie Ihr individuelles Fliegengitter zusammen"
       metadata={product.metadata}
       variantId={product.variants[0]?.id}
+      thumbnail={product.thumbnail}
+      images={product.images}
     />
   );
 }

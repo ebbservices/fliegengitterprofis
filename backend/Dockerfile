@@ -25,6 +25,8 @@ COPY --from=builder --chown=medusa:nodejs /app/tsconfig.json ./tsconfig.json
 COPY --from=builder --chown=medusa:nodejs /app/src ./src
 COPY --from=builder --chown=medusa:nodejs /app/.medusa/server/public ./public
 
+RUN mkdir -p /app/static && chown medusa:nodejs /app/static
+
 USER medusa
 
 EXPOSE 9000

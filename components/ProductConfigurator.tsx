@@ -3,6 +3,7 @@
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import AddToCartModal from '@/components/AddToCartModal';
+import Image from 'next/image';
 import { useState } from 'react';
 import Link from 'next/link';
 import { useCart } from '@/lib/hooks/use-cart';
@@ -20,12 +21,18 @@ interface OptionGroup {
   options: OptionItem[];
 }
 
+interface ProductImage {
+  url: string;
+}
+
 interface ProductConfiguratorProps {
   productId: string;
   productTitle: string;
   productDescription: string;
   metadata: ConfiguratorMetadata;
   variantId?: string;
+  thumbnail?: string | null;
+  images?: ProductImage[];
 }
 
 function buildOptionGroups(metadata: ConfiguratorMetadata): OptionGroup[] {
@@ -52,9 +59,28 @@ export default function ProductConfigurator({
   productDescription,
   metadata,
   variantId,
+  thumbnail,
+  images,
 }: ProductConfiguratorProps) {
   const optionGroups = buildOptionGroups(metadata);
   const dims = metadata.dimensions;
+
+  // Gallery images: deduplicate thumbnail + images array
+  const galleryImages: string[] = [];
+  if (thumbnail) galleryImages.push(thumbnail);
+  if (images) {
+    for (const img of images) {
+      if (img.url && !galleryImages.includes(img.url)) {
+        galleryImages.push(img.url);
+      }
+    }
+  }
+  // Fallback if no images at all
+  if (galleryImages.length === 0) {
+    galleryImages.push('/images/image-2.jpg');
+  }
+
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
 
   const [height, setHeight] = useState(
     Math.round((dims.height_min + dims.height_max) / 2 / 100) * 100
@@ -93,8 +119,14 @@ export default function ProductConfigurator({
     return (totalCents / 100).toFixed(2);
   };
 
+  const isDimensionValid =
+    height >= dims.height_min &&
+    height <= dims.height_max &&
+    width >= dims.width_min &&
+    width <= dims.width_max;
+
   const addToCart = async () => {
-    if (isAdding) return;
+    if (isAdding || !isDimensionValid) return;
     setIsAdding(true);
 
     let finalPrice = calculatePrice();
@@ -169,6 +201,67 @@ export default function ProductConfigurator({
           <div className="container mx-auto max-w-6xl">
             <div className="grid lg:grid-cols-3 gap-8">
               <div className="lg:col-span-2 space-y-8">
+                {/* Produktgalerie */}
+                <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+                  <div className="relative aspect-[4/3] bg-gray-50">
+                    <Image
+                      src={galleryImages[selectedImageIndex]}
+                      alt={productTitle}
+                      fill
+                      className="object-contain p-4"
+                      sizes="(max-width: 1024px) 100vw, 66vw"
+                      priority
+                    />
+                    {galleryImages.length > 1 && (
+                      <>
+                        <button
+                          onClick={() => setSelectedImageIndex((prev) => prev === 0 ? galleryImages.length - 1 : prev - 1)}
+                          className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/90 backdrop-blur-sm rounded-full shadow-lg flex items-center justify-center hover:bg-white transition-colors"
+                          aria-label="Vorheriges Bild"
+                        >
+                          <svg className="w-5 h-5 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                          </svg>
+                        </button>
+                        <button
+                          onClick={() => setSelectedImageIndex((prev) => prev === galleryImages.length - 1 ? 0 : prev + 1)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/90 backdrop-blur-sm rounded-full shadow-lg flex items-center justify-center hover:bg-white transition-colors"
+                          aria-label="Nächstes Bild"
+                        >
+                          <svg className="w-5 h-5 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                          </svg>
+                        </button>
+                      </>
+                    )}
+                  </div>
+                  {galleryImages.length > 1 && (
+                    <div className="p-3 border-t border-gray-100">
+                      <div className="flex gap-2 overflow-x-auto">
+                        {galleryImages.map((img, idx) => (
+                          <button
+                            key={idx}
+                            onClick={() => setSelectedImageIndex(idx)}
+                            className={`relative w-20 h-20 flex-shrink-0 rounded-lg overflow-hidden border-2 transition-all ${
+                              idx === selectedImageIndex
+                                ? 'border-orange-500 shadow-md'
+                                : 'border-gray-200 hover:border-gray-400'
+                            }`}
+                          >
+                            <Image
+                              src={img}
+                              alt={`${productTitle} Bild ${idx + 1}`}
+                              fill
+                              className="object-cover"
+                              sizes="80px"
+                            />
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
                 {/* Maße */}
                 <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
                   <h2 className="text-2xl font-bold text-slate-900 mb-6 flex items-center gap-3">
@@ -203,11 +296,21 @@ export default function ProductConfigurator({
                         max={dims.height_max}
                         value={height}
                         onChange={(e) => setHeight(Number(e.target.value))}
-                        className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:border-orange-500 focus:outline-none text-lg font-semibold"
+                        className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none text-lg font-semibold ${
+                          height < dims.height_min || height > dims.height_max
+                            ? 'border-red-500 focus:border-red-500 bg-red-50'
+                            : 'border-gray-300 focus:border-orange-500'
+                        }`}
                       />
-                      <p className="text-sm text-slate-500 mt-2">
-                        Min: {dims.height_min}mm, Max: {dims.height_max}mm
-                      </p>
+                      {height < dims.height_min || height > dims.height_max ? (
+                        <p className="text-sm text-red-600 mt-2 font-medium">
+                          Bitte Wert zwischen {dims.height_min}mm und {dims.height_max}mm eingeben
+                        </p>
+                      ) : (
+                        <p className="text-sm text-slate-500 mt-2">
+                          Min: {dims.height_min}mm, Max: {dims.height_max}mm
+                        </p>
+                      )}
                     </div>
 
                     <div>
@@ -220,11 +323,21 @@ export default function ProductConfigurator({
                         max={dims.width_max}
                         value={width}
                         onChange={(e) => setWidth(Number(e.target.value))}
-                        className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:border-orange-500 focus:outline-none text-lg font-semibold"
+                        className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none text-lg font-semibold ${
+                          width < dims.width_min || width > dims.width_max
+                            ? 'border-red-500 focus:border-red-500 bg-red-50'
+                            : 'border-gray-300 focus:border-orange-500'
+                        }`}
                       />
-                      <p className="text-sm text-slate-500 mt-2">
-                        Min: {dims.width_min}mm, Max: {dims.width_max}mm
-                      </p>
+                      {width < dims.width_min || width > dims.width_max ? (
+                        <p className="text-sm text-red-600 mt-2 font-medium">
+                          Bitte Wert zwischen {dims.width_min}mm und {dims.width_max}mm eingeben
+                        </p>
+                      ) : (
+                        <p className="text-sm text-slate-500 mt-2">
+                          Min: {dims.width_min}mm, Max: {dims.width_max}mm
+                        </p>
+                      )}
                     </div>
                   </div>
 
@@ -335,10 +448,10 @@ export default function ProductConfigurator({
 
                   <button
                     onClick={addToCart}
-                    disabled={isAdding}
-                    className="w-full bg-white text-orange-600 px-6 py-4 rounded-xl font-bold hover:bg-orange-50 transition-all shadow-lg hover:shadow-xl mb-3 disabled:opacity-50"
+                    disabled={isAdding || !isDimensionValid}
+                    className="w-full bg-white text-orange-600 px-6 py-4 rounded-xl font-bold hover:bg-orange-50 transition-all shadow-lg hover:shadow-xl mb-3 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {isAdding ? 'Wird hinzugefügt...' : 'In den Warenkorb'}
+                    {!isDimensionValid ? 'Bitte gültige Maße eingeben' : isAdding ? 'Wird hinzugefügt...' : 'In den Warenkorb'}
                   </button>
 
                   <Link

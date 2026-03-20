@@ -198,7 +198,7 @@ if (-not $SkipDeploy) {
 
 Frontend:  https://dev.diefliegengitterprofis.mobatix.de
 Backend:   https://admin.diefliegengitterprofis.mobatix.de
-Admin:     https://admin.diefliegengitterprofis.mobatix.de/admin
+Admin:     https://admin.diefliegengitterprofis.mobatix.de/app
 
 "@ -ForegroundColor Green
 

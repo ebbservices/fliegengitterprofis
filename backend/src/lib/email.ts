@@ -166,6 +166,157 @@ export async function sendOrderConfirmation(data: OrderEmailData): Promise<void>
   }
 }
 
+// --- Kontaktformular ---
+
+interface ContactEmailData {
+  name: string;
+  email: string;
+  phone?: string;
+  message: string;
+}
+
+function buildContactEmailHtml(data: ContactEmailData): string {
+  return `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"></head>
+<body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #2C2C2C;">
+  <div style="background: linear-gradient(135deg, #FF8C42, #e07a35); padding: 30px; text-align: center;">
+    <h1 style="color: white; margin: 0; font-size: 24px;">Neue Projektanfrage</h1>
+  </div>
+  <div style="padding: 30px;">
+    <p><strong>Name:</strong> ${data.name}</p>
+    <p><strong>E-Mail:</strong> ${data.email}</p>
+    ${data.phone ? `<p><strong>Telefon:</strong> ${data.phone}</p>` : ""}
+    <h3 style="border-bottom: 2px solid #FF8C42; padding-bottom: 8px;">Nachricht</h3>
+    <p style="white-space: pre-wrap;">${data.message}</p>
+  </div>
+  <div style="background: #2C2C2C; color: white; padding: 20px; text-align: center; font-size: 13px;">
+    <p style="margin: 0;">${fromName}</p>
+  </div>
+</body>
+</html>`;
+}
+
+function buildContactConfirmationHtml(data: ContactEmailData): string {
+  return `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"></head>
+<body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #2C2C2C;">
+  <div style="background: linear-gradient(135deg, #FF8C42, #e07a35); padding: 30px; text-align: center;">
+    <h1 style="color: white; margin: 0; font-size: 24px;">Ihre Anfrage</h1>
+  </div>
+  <div style="padding: 30px;">
+    <p>Hallo ${data.name},</p>
+    <p>vielen Dank für Ihre Anfrage. Wir haben Ihre Nachricht erhalten und melden uns in Kürze bei Ihnen.</p>
+    <div style="background: #F5F5F5; border-radius: 8px; padding: 16px; margin: 20px 0;">
+      <p style="margin: 0; white-space: pre-wrap;">${data.message}</p>
+    </div>
+    <p style="color: #666; font-size: 13px;">Diese E-Mail wurde automatisch versendet. Bitte antworten Sie nicht direkt auf diese E-Mail.</p>
+  </div>
+  <div style="background: #2C2C2C; color: white; padding: 20px; text-align: center; font-size: 13px;">
+    <p style="margin: 0;">${fromName}</p>
+  </div>
+</body>
+</html>`;
+}
+
+export async function sendContactEmail(data: ContactEmailData): Promise<void> {
+  if (!process.env.SMTP_USER || !process.env.SMTP_PASSWORD) {
+    console.warn("SMTP nicht konfiguriert — Kontakt-E-Mail wird übersprungen");
+    return;
+  }
+
+  try {
+    await transporter.sendMail({
+      from: `"${fromName}" <${fromEmail}>`,
+      to: fromEmail,
+      replyTo: data.email,
+      subject: `Neue Projektanfrage von ${data.name}`,
+      html: buildContactEmailHtml(data),
+    });
+    console.log(`Kontaktanfrage von ${data.email} an Admin gesendet`);
+  } catch (error) {
+    console.error("Fehler beim Senden der Kontakt-E-Mail:", error);
+    throw error;
+  }
+}
+
+export async function sendContactConfirmation(data: ContactEmailData): Promise<void> {
+  if (!process.env.SMTP_USER || !process.env.SMTP_PASSWORD) {
+    return;
+  }
+
+  try {
+    await transporter.sendMail({
+      from: `"${fromName}" <${fromEmail}>`,
+      to: data.email,
+      subject: `Ihre Anfrage bei ${fromName}`,
+      html: buildContactConfirmationHtml(data),
+    });
+    console.log(`Kontaktbestätigung an ${data.email} gesendet`);
+  } catch (error) {
+    console.error("Fehler beim Senden der Kontaktbestätigung:", error);
+  }
+}
+
+// --- E-Mail-Verifizierung ---
+
+interface VerificationEmailData {
+  email: string;
+  firstName: string;
+  verificationUrl: string;
+}
+
+function buildVerificationEmailHtml(data: VerificationEmailData): string {
+  return `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"></head>
+<body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #2C2C2C;">
+  <div style="background: linear-gradient(135deg, #FF8C42, #e07a35); padding: 30px; text-align: center;">
+    <h1 style="color: white; margin: 0; font-size: 24px;">E-Mail bestätigen</h1>
+  </div>
+  <div style="padding: 30px;">
+    <p>Hallo ${data.firstName},</p>
+    <p>vielen Dank für Ihre Registrierung! Bitte bestätigen Sie Ihre E-Mail-Adresse, indem Sie auf den folgenden Button klicken:</p>
+    <div style="text-align: center; margin: 30px 0;">
+      <a href="${data.verificationUrl}" style="background: #FF8C42; color: white; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 16px; display: inline-block;">
+        E-Mail bestätigen
+      </a>
+    </div>
+    <p style="color: #666; font-size: 13px;">Oder kopieren Sie diesen Link in Ihren Browser:</p>
+    <p style="color: #666; font-size: 13px; word-break: break-all;">${data.verificationUrl}</p>
+    <p style="color: #666; font-size: 13px; margin-top: 20px;">Dieser Link ist 48 Stunden gültig.</p>
+  </div>
+  <div style="background: #2C2C2C; color: white; padding: 20px; text-align: center; font-size: 13px;">
+    <p style="margin: 0;">${fromName}</p>
+  </div>
+</body>
+</html>`;
+}
+
+export async function sendVerificationEmail(data: VerificationEmailData): Promise<void> {
+  if (!process.env.SMTP_USER || !process.env.SMTP_PASSWORD) {
+    console.warn("SMTP nicht konfiguriert — Verifizierungs-E-Mail wird übersprungen");
+    return;
+  }
+
+  try {
+    await transporter.sendMail({
+      from: `"${fromName}" <${fromEmail}>`,
+      to: data.email,
+      subject: `E-Mail-Adresse bestätigen — ${fromName}`,
+      html: buildVerificationEmailHtml(data),
+    });
+    console.log(`Verifizierungs-E-Mail an ${data.email} gesendet`);
+  } catch (error) {
+    console.error("Fehler beim Senden der Verifizierungs-E-Mail:", error);
+    throw error;
+  }
+}
+
 export async function sendAdminNotification(data: OrderEmailData): Promise<void> {
   if (!process.env.SMTP_USER || !process.env.SMTP_PASSWORD) {
     return;

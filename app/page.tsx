@@ -1,5 +1,6 @@
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import ContactForm from '@/components/ContactForm';
 import Link from 'next/link';
 import Image from 'next/image';
 
@@ -497,51 +498,7 @@ export default function Home() {
               </a>
             </div>
 
-            <div className="bg-[#F5F5F5] p-8 rounded-lg">
-              <h4 className="text-2xl font-bold text-[#2C2C2C] mb-6 text-center">
-                Projektanfrage
-              </h4>
-              <form className="space-y-4">
-                <div className="grid md:grid-cols-2 gap-4">
-                  <input 
-                    type="text" 
-                    placeholder="Ihr Name" 
-                    className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-[#FF8C42] focus:outline-none"
-                  />
-                  <input 
-                    type="email" 
-                    placeholder="Ihre E-Mail" 
-                    className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-[#FF8C42] focus:outline-none"
-                  />
-                </div>
-                <input 
-                  type="tel" 
-                  placeholder="Ihre Telefonnummer" 
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-[#FF8C42] focus:outline-none"
-                />
-                <textarea 
-                  placeholder="Ihre Nachricht" 
-                  rows={5}
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-[#FF8C42] focus:outline-none"
-                ></textarea>
-                <div className="flex items-start gap-2">
-                  <input 
-                    type="checkbox" 
-                    id="privacy" 
-                    className="mt-1"
-                  />
-                  <label htmlFor="privacy" className="text-sm text-[#6B6B6B]">
-                    Ich habe die <Link href="/datenschutz" className="text-[#FF8C42] hover:underline">Datenschutzbestimmungen</Link> gelesen und akzeptiert.
-                  </label>
-                </div>
-                <button 
-                  type="submit"
-                  className="w-full bg-[#FF8C42] text-white px-8 py-4 rounded-full font-semibold text-lg hover:bg-[#ff6b1a] transition-colors"
-                >
-                  Anfrage senden
-                </button>
-              </form>
-            </div>
+            <ContactForm />
           </div>
         </section>
       </main>

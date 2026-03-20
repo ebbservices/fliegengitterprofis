@@ -28,7 +28,7 @@ export interface AuthContextValue {
     password: string;
     first_name: string;
     last_name: string;
-  }) => Promise<{ success: boolean; error?: string }>;
+  }) => Promise<{ success: boolean; error?: string; customerId?: string }>;
   logout: () => Promise<void>;
 }
 
@@ -48,7 +48,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (MEDUSA_PUBLISHABLE_KEY) {
           healthHeaders['x-publishable-api-key'] = MEDUSA_PUBLISHABLE_KEY;
         }
-        const healthResponse = await fetch(`${MEDUSA_BACKEND_URL}/store/products?limit=0`, {
+        const healthResponse = await fetch(`${MEDUSA_BACKEND_URL}/store/products?limit=1&fields=id`, {
           signal: AbortSignal.timeout(3000),
           headers: healthHeaders,
         });
@@ -117,7 +117,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       password: string;
       first_name: string;
       last_name: string;
-    }): Promise<{ success: boolean; error?: string }> => {
+    }): Promise<{ success: boolean; error?: string; customerId?: string }> => {
       try {
         // 1. Auth-Account erstellen
         const token = await sdk.auth.register('customer', 'emailpass', {
@@ -143,6 +143,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             first_name: response.customer.first_name ?? null,
             last_name: response.customer.last_name ?? null,
           });
+          return { success: true, customerId: response.customer.id };
         }
         return { success: true };
       } catch (err) {

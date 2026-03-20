@@ -6,7 +6,7 @@ import { useAuth } from '@/lib/hooks/use-auth';
 import { useRouter, usePathname } from 'next/navigation';
 import { useEffect } from 'react';
 
-const PUBLIC_PATHS = ['/konto/login', '/konto/registrieren'];
+const PUBLIC_PATHS = ['/konto/login', '/konto/registrieren', '/konto/verifizieren'];
 
 export default function KontoLayout({
   children,

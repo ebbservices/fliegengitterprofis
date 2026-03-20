@@ -2,11 +2,13 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useCart } from '@/lib/hooks/use-cart';
+import { useAuth } from '@/lib/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { MEDUSA_BACKEND_URL, MEDUSA_PUBLISHABLE_KEY } from '@/lib/config';
 
-type Step = 'address' | 'payment' | 'review';
+type AccountMode = 'guest' | 'create-account' | 'logged-in';
+type Step = 'mode' | 'address' | 'payment' | 'review';
 
 interface Address {
   first_name: string;
@@ -112,10 +114,19 @@ const COUNTRY_NAMES: Record<string, string> = {
 
 export default function CheckoutPage() {
   const { localCart, clearCart, cartCount } = useCart();
+  const { customer, isAuthenticated, isLoading: authLoading, login, register, backendAvailable } = useAuth();
   const router = useRouter();
-  const [step, setStep] = useState<Step>('address');
+
+  // Account mode & step
+  const [accountMode, setAccountMode] = useState<AccountMode>('guest');
+  const [step, setStep] = useState<Step>('mode');
+  const [initialized, setInitialized] = useState(false);
+
+  // Form state
   const [email, setEmail] = useState('');
   const [billingAddress, setBillingAddress] = useState<Address>(emptyAddress);
+  const [password, setPassword] = useState('');
+  const [passwordConfirm, setPasswordConfirm] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [acceptedTerms, setAcceptedTerms] = useState(false);
@@ -123,6 +134,36 @@ export default function CheckoutPage() {
   const [availableCountries, setAvailableCountries] = useState<AvailableCountry[]>([
     { iso_2: 'de', display_name: 'Deutschland' },
   ]);
+
+  // Login form within checkout
+  const [showLoginForm, setShowLoginForm] = useState(false);
+  const [loginEmail, setLoginEmail] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
+  const [loginError, setLoginError] = useState('');
+  const [loginLoading, setLoginLoading] = useState(false);
+
+  // Initialize based on auth state
+  useEffect(() => {
+    if (authLoading || initialized) return;
+
+    if (isAuthenticated && customer) {
+      setAccountMode('logged-in');
+      setEmail(customer.email);
+      setBillingAddress((prev) => ({
+        ...prev,
+        first_name: customer.first_name || '',
+        last_name: customer.last_name || '',
+      }));
+      setStep('address');
+    } else if (!backendAvailable) {
+      // Backend nicht erreichbar → direkt Gast
+      setAccountMode('guest');
+      setStep('address');
+    } else {
+      setStep('mode');
+    }
+    setInitialized(true);
+  }, [authLoading, isAuthenticated, customer, backendAvailable, initialized]);
 
   const fetchShippingConfig = useCallback(async (countryCode: string) => {
     try {
@@ -180,6 +221,27 @@ export default function CheckoutPage() {
 
   const isFreeShipping = () => getShippingCost() === 0;
 
+  const handleLogin = async () => {
+    setLoginError('');
+    setLoginLoading(true);
+
+    try {
+      const result = await login(loginEmail, loginPassword);
+      if (result.success) {
+        setAccountMode('logged-in');
+        setEmail(loginEmail);
+        setShowLoginForm(false);
+        setStep('address');
+      } else {
+        setLoginError(result.error || 'Login fehlgeschlagen');
+      }
+    } catch {
+      setLoginError('Login fehlgeschlagen');
+    } finally {
+      setLoginLoading(false);
+    }
+  };
+
   if (cartCount === 0) {
     return (
       <section className="py-20 px-4">
@@ -194,13 +256,22 @@ export default function CheckoutPage() {
     );
   }
 
-  const steps: { key: Step; label: string; number: number }[] = [
-    { key: 'address', label: 'Adresse', number: 1 },
-    { key: 'payment', label: 'Zahlung', number: 2 },
-    { key: 'review', label: 'Übersicht', number: 3 },
-  ];
+  // Dynamic steps based on auth state
+  const allSteps: { key: Step; label: string }[] =
+    accountMode === 'logged-in'
+      ? [
+          { key: 'address', label: 'Adresse' },
+          { key: 'payment', label: 'Zahlung' },
+          { key: 'review', label: 'Übersicht' },
+        ]
+      : [
+          { key: 'mode', label: 'Kontoart' },
+          { key: 'address', label: 'Adresse' },
+          { key: 'payment', label: 'Zahlung' },
+          { key: 'review', label: 'Übersicht' },
+        ];
 
-  const currentStepIndex = steps.findIndex((s) => s.key === step);
+  const currentStepIndex = allSteps.findIndex((s) => s.key === step);
 
   const handlePlaceOrder = async () => {
     if (!acceptedTerms) {
@@ -234,15 +305,22 @@ export default function CheckoutPage() {
         };
       });
 
+      const orderBody: Record<string, unknown> = {
+        email,
+        billing_address: billingAddress,
+        items: orderItems,
+        shipping_cost_cents: Math.round(getShippingCost() * 100),
+      };
+
+      // Customer-ID mitsenden wenn eingeloggt
+      if (accountMode === 'logged-in' && customer?.id) {
+        orderBody.customer_id = customer.id;
+      }
+
       const res = await fetch(`${MEDUSA_BACKEND_URL}/store/place-order`, {
         method: 'POST',
         headers,
-        body: JSON.stringify({
-          email,
-          billing_address: billingAddress,
-          items: orderItems,
-          shipping_cost_cents: Math.round(getShippingCost() * 100),
-        }),
+        body: JSON.stringify(orderBody),
       });
 
       if (!res.ok) {
@@ -250,8 +328,45 @@ export default function CheckoutPage() {
         throw new Error(data.error || 'Bestellung fehlgeschlagen');
       }
 
+      const orderResult = await res.json();
+
+      // Konto erstellen wenn gewünscht
+      let finalMode = accountMode;
+      if (accountMode === 'create-account') {
+        try {
+          const regResult = await register({
+            email,
+            password,
+            first_name: billingAddress.first_name,
+            last_name: billingAddress.last_name,
+          });
+
+          if (regResult.success && regResult.customerId) {
+            // Order dem neuen Kunden zuordnen + Verifizierungs-Email
+            try {
+              await fetch(`${MEDUSA_BACKEND_URL}/store/link-order-and-verify`, {
+                method: 'POST',
+                headers,
+                body: JSON.stringify({
+                  customer_id: regResult.customerId,
+                  order_id: orderResult.order_id,
+                }),
+              });
+            } catch {
+              console.error('Order-Zuordnung oder Verifizierung fehlgeschlagen');
+            }
+          } else {
+            console.error('Registrierung fehlgeschlagen:', regResult.error);
+            finalMode = 'guest';
+          }
+        } catch {
+          console.error('Kontoerstellung fehlgeschlagen');
+          finalMode = 'guest';
+        }
+      }
+
       await clearCart();
-      router.push('/shop/checkout/danke');
+      router.push(`/shop/checkout/danke?mode=${finalMode}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Bestellung konnte nicht aufgegeben werden. Bitte versuchen Sie es erneut.');
     } finally {
@@ -259,12 +374,23 @@ export default function CheckoutPage() {
     }
   };
 
+  // Loading while auth initializes
+  if (authLoading || !initialized) {
+    return (
+      <section className="py-20 px-4">
+        <div className="container mx-auto max-w-2xl text-center">
+          <div className="w-12 h-12 border-4 border-orange-200 border-t-orange-500 rounded-full animate-spin mx-auto"></div>
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section className="py-8 px-4">
       <div className="container mx-auto max-w-4xl">
         {/* Step Indicator */}
         <div className="flex items-center justify-center gap-2 mb-10">
-          {steps.map((s, idx) => (
+          {allSteps.map((s, idx) => (
             <div key={s.key} className="flex items-center">
               <div
                 className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
@@ -273,7 +399,7 @@ export default function CheckoutPage() {
                     : 'bg-gray-200 text-gray-500'
                 }`}
               >
-                {s.number}
+                {idx + 1}
               </div>
               <span
                 className={`ml-2 text-sm font-medium hidden sm:inline ${
@@ -282,7 +408,7 @@ export default function CheckoutPage() {
               >
                 {s.label}
               </span>
-              {idx < steps.length - 1 && (
+              {idx < allSteps.length - 1 && (
                 <div
                   className={`w-8 sm:w-16 h-0.5 mx-2 ${
                     idx < currentStepIndex ? 'bg-orange-500' : 'bg-gray-200'
@@ -296,13 +422,137 @@ export default function CheckoutPage() {
         <div className="grid lg:grid-cols-3 gap-8">
           {/* Form */}
           <div className="lg:col-span-2">
-            {/* Step 1: Address */}
+            {/* Step: Mode Selection */}
+            {step === 'mode' && (
+              <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
+                <h2 className="text-2xl font-bold text-slate-900 mb-6">Wie möchten Sie bestellen?</h2>
+
+                {!showLoginForm ? (
+                  <div className="space-y-4">
+                    <button
+                      onClick={() => {
+                        setAccountMode('guest');
+                        setStep('address');
+                      }}
+                      className="w-full flex items-center gap-4 p-5 border-2 border-gray-200 rounded-xl hover:border-orange-500 hover:bg-orange-50 transition-all text-left"
+                    >
+                      <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center flex-shrink-0">
+                        <svg className="w-6 h-6 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                        </svg>
+                      </div>
+                      <div>
+                        <p className="font-bold text-slate-900">Als Gast bestellen</p>
+                        <p className="text-sm text-slate-600">Ohne Registrierung direkt bestellen</p>
+                      </div>
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        setAccountMode('create-account');
+                        setStep('address');
+                      }}
+                      className="w-full flex items-center gap-4 p-5 border-2 border-gray-200 rounded-xl hover:border-orange-500 hover:bg-orange-50 transition-all text-left"
+                    >
+                      <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center flex-shrink-0">
+                        <svg className="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+                        </svg>
+                      </div>
+                      <div>
+                        <p className="font-bold text-slate-900">Kundenkonto anlegen</p>
+                        <p className="text-sm text-slate-600">Bestellungen einsehen & schneller nachbestellen</p>
+                      </div>
+                    </button>
+
+                    <div className="pt-4 border-t border-gray-200">
+                      <button
+                        onClick={() => setShowLoginForm(true)}
+                        className="text-sm text-orange-600 hover:text-orange-700 font-medium hover:underline"
+                      >
+                        Bereits ein Konto? Anmelden
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <h3 className="font-semibold text-slate-900">Anmelden</h3>
+                    <AddressField
+                      label="E-Mail-Adresse"
+                      value={loginEmail}
+                      onChange={setLoginEmail}
+                      type="email"
+                      placeholder="ihre@email.de"
+                    />
+                    <div>
+                      <label className="block text-sm font-semibold text-slate-700 mb-2">Passwort</label>
+                      <input
+                        type="password"
+                        value={loginPassword}
+                        onChange={(e) => setLoginPassword(e.target.value)}
+                        className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:border-orange-500 focus:outline-none"
+                        onKeyDown={(e) => { if (e.key === 'Enter') handleLogin(); }}
+                      />
+                    </div>
+
+                    {loginError && (
+                      <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+                        <p className="text-sm text-red-700">{loginError}</p>
+                      </div>
+                    )}
+
+                    <div className="flex gap-3">
+                      <button
+                        onClick={() => { setShowLoginForm(false); setLoginError(''); }}
+                        className="flex-1 border-2 border-gray-300 text-slate-700 px-4 py-3 rounded-xl font-bold hover:bg-gray-50 transition-all"
+                      >
+                        Zurück
+                      </button>
+                      <button
+                        onClick={handleLogin}
+                        disabled={loginLoading}
+                        className="flex-1 bg-gradient-to-r from-orange-500 to-orange-600 text-white px-4 py-3 rounded-xl font-bold hover:from-orange-600 hover:to-orange-700 transition-all disabled:opacity-50"
+                      >
+                        {loginLoading ? 'Wird angemeldet...' : 'Anmelden'}
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Step: Address */}
             {step === 'address' && (
               <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
                 <h2 className="text-2xl font-bold text-slate-900 mb-6">Rechnungs- & Lieferadresse</h2>
 
                 <div className="space-y-4">
                   <AddressField label="E-Mail-Adresse" value={email} onChange={setEmail} type="email" placeholder="ihre@email.de" />
+
+                  {accountMode === 'create-account' && (
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-semibold text-slate-700 mb-2">Passwort *</label>
+                        <input
+                          type="password"
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                          placeholder="Mind. 8 Zeichen"
+                          className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:border-orange-500 focus:outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-semibold text-slate-700 mb-2">Passwort bestätigen *</label>
+                        <input
+                          type="password"
+                          value={passwordConfirm}
+                          onChange={(e) => setPasswordConfirm(e.target.value)}
+                          placeholder="Passwort wiederholen"
+                          className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:border-orange-500 focus:outline-none"
+                        />
+                      </div>
+                    </div>
+                  )}
 
                   <div className="grid grid-cols-2 gap-4">
                     <AddressField label="Vorname" value={billingAddress.first_name} onChange={(v) => setBillingAddress({ ...billingAddress, first_name: v })} />
@@ -337,23 +587,49 @@ export default function CheckoutPage() {
                   <AddressField label="Telefon" value={billingAddress.phone} onChange={(v) => setBillingAddress({ ...billingAddress, phone: v })} type="tel" required={false} placeholder="Für Rückfragen zur Lieferung" />
                 </div>
 
-                <button
-                  onClick={() => {
-                    if (!email || !billingAddress.first_name || !billingAddress.last_name || !billingAddress.address_1 || !billingAddress.postal_code || !billingAddress.city) {
-                      setError('Bitte füllen Sie alle Pflichtfelder aus.');
-                      return;
-                    }
-                    setError('');
-                    setStep('payment');
-                  }}
-                  className="w-full mt-6 bg-gradient-to-r from-orange-500 to-orange-600 text-white px-6 py-4 rounded-xl font-bold hover:from-orange-600 hover:to-orange-700 transition-all"
-                >
-                  Weiter zur Zahlung
-                </button>
+                {error && (
+                  <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                    <p className="text-sm text-red-700">{error}</p>
+                  </div>
+                )}
+
+                <div className="flex gap-4 mt-6">
+                  {accountMode !== 'logged-in' && (
+                    <button
+                      onClick={() => { setStep('mode'); setError(''); }}
+                      className="flex-1 border-2 border-gray-300 text-slate-700 px-6 py-4 rounded-xl font-bold hover:bg-gray-50 transition-all"
+                    >
+                      Zurück
+                    </button>
+                  )}
+                  <button
+                    onClick={() => {
+                      if (!email || !billingAddress.first_name || !billingAddress.last_name || !billingAddress.address_1 || !billingAddress.postal_code || !billingAddress.city) {
+                        setError('Bitte füllen Sie alle Pflichtfelder aus.');
+                        return;
+                      }
+                      if (accountMode === 'create-account') {
+                        if (password.length < 8) {
+                          setError('Das Passwort muss mindestens 8 Zeichen lang sein.');
+                          return;
+                        }
+                        if (password !== passwordConfirm) {
+                          setError('Die Passwörter stimmen nicht überein.');
+                          return;
+                        }
+                      }
+                      setError('');
+                      setStep('payment');
+                    }}
+                    className="flex-1 bg-gradient-to-r from-orange-500 to-orange-600 text-white px-6 py-4 rounded-xl font-bold hover:from-orange-600 hover:to-orange-700 transition-all"
+                  >
+                    Weiter zur Zahlung
+                  </button>
+                </div>
               </div>
             )}
 
-            {/* Step 2: Payment */}
+            {/* Step: Payment */}
             {step === 'payment' && (
               <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
                 <h2 className="text-2xl font-bold text-slate-900 mb-6">Zahlungsart</h2>
@@ -387,7 +663,7 @@ export default function CheckoutPage() {
               </div>
             )}
 
-            {/* Step 3: Review */}
+            {/* Step: Review */}
             {step === 'review' && (
               <div className="space-y-6">
                 <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
@@ -410,6 +686,9 @@ export default function CheckoutPage() {
                       <div className="text-sm text-slate-600">
                         <p>Lieferzeit: {shippingConfig.delivery_days_min}–{shippingConfig.delivery_days_max} Werktage</p>
                         <p>Vorkasse / Banküberweisung</p>
+                        {accountMode === 'create-account' && (
+                          <p className="mt-2 text-orange-600 font-medium">Kundenkonto wird nach Bestellung erstellt</p>
+                        )}
                       </div>
                     </div>
                   </div>

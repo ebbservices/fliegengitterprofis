@@ -59,7 +59,7 @@ export default async function ShopPage() {
                   <div key={product.id} className="bg-white rounded-2xl shadow-xl overflow-hidden hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 border border-gray-100">
                     <div className="relative h-64">
                       <Image
-                        src="/images/image-2.jpg"
+                        src={product.thumbnail || product.images?.[0]?.url || '/images/image-2.jpg'}
                         alt={product.title}
                         fill
                         className="object-cover"
