@@ -85,17 +85,13 @@ jobs:
       - name: Deploy to Kubernetes
         run: |
           TAG="${{ steps.tag.outputs.TAG }}"
+          NS="${{ env.K8S_NAMESPACE }}"
 
-          # Image-Tag in den Manifests aktualisieren
-          sed -i "s|image:.*fliegengitter-shop:.*|image: ${{ env.FRONTEND_IMAGE }}:${TAG}|" k8s/deployment.yaml
-          sed -i "s|image:.*medusa-backend:.*|image: ${{ env.BACKEND_IMAGE }}:${TAG}|" k8s/backend-deployment.yaml
-
-          # Immer apply — erstellt oder aktualisiert die Ressourcen
-          echo "Applying frontend manifests (${TAG})..."
-          kubectl apply -f k8s/deployment.yaml -n ${{ env.K8S_NAMESPACE }}
-
-          echo "Applying backend manifests (${TAG})..."
-          kubectl apply -f k8s/backend-deployment.yaml -n ${{ env.K8S_NAMESPACE }}
+          echo "Deploying ${TAG}..."
+          kubectl set image deployment/fliegengitter-shop \
+            fliegengitter-shop=${{ env.FRONTEND_IMAGE }}:${TAG} -n ${NS}
+          kubectl set image deployment/medusa-backend \
+            medusa-backend=${{ env.BACKEND_IMAGE }}:${TAG} -n ${NS}
 
       - name: Wait for rollout
         run: |
