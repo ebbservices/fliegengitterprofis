@@ -43,4 +43,5 @@ template:
       - name: docker-certs
         emptyDir: {}
       - name: dind-storage
-        emptyDir: {}
+        persistentVolumeClaim:
+          claimName: dind-cache
