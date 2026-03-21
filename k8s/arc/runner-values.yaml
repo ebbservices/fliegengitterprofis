@@ -27,9 +27,6 @@ template:
           - name: docker-certs
             mountPath: /certs
             readOnly: true
-          - name: registry-auth
-            mountPath: /home/runner/.docker
-            readOnly: true
       - name: dind
         image: docker:dind
         securityContext:
@@ -47,9 +44,3 @@ template:
         emptyDir: {}
       - name: dind-storage
         emptyDir: {}
-      - name: registry-auth
-        secret:
-          secretName: runner-registry-dockerconfig
-          items:
-            - key: .dockerconfigjson
-              path: config.json

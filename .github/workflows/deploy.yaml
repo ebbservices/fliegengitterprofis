@@ -46,12 +46,22 @@ jobs:
           echo "TAG=${NEXT}" >> $GITHUB_OUTPUT
           echo "Next version: ${NEXT}"
 
+      - name: Install kubectl
+        run: |
+          curl -LO "https://dl.k8s.io/release/$(curl -sL https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+          chmod +x kubectl
+          mv kubectl /usr/local/bin/kubectl
+          kubectl version --client
+
       - name: Wait for Docker daemon
         run: |
           for i in $(seq 1 30); do
             docker info > /dev/null 2>&1 && break
             sleep 1
           done
+
+      - name: Docker login
+        run: echo "${REGISTRY_PASSWORD}" | docker login registry.mobatix.de -u admin --password-stdin
 
       - name: Build frontend image
         run: |
