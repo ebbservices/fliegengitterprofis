@@ -1,0 +1,55 @@
+githubConfigUrl: "https://github.com/ebbservices/fliegengitterprofis"
+githubConfigSecret: github-app-secret
+
+maxRunners: 5
+minRunners: 0
+
+template:
+  spec:
+    serviceAccountName: arc-runner-sa
+    containers:
+      - name: runner
+        image: ghcr.io/actions/actions-runner:latest
+        command: ["/home/runner/run.sh"]
+        env:
+          - name: DOCKER_HOST
+            value: tcp://localhost:2376
+          - name: DOCKER_TLS_VERIFY
+            value: "1"
+          - name: DOCKER_CERT_PATH
+            value: /certs/client
+          - name: REGISTRY_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: registry-api-credentials
+                key: password
+        volumeMounts:
+          - name: docker-certs
+            mountPath: /certs
+            readOnly: true
+          - name: registry-auth
+            mountPath: /home/runner/.docker
+            readOnly: true
+      - name: dind
+        image: docker:dind
+        securityContext:
+          privileged: true
+        env:
+          - name: DOCKER_TLS_CERTDIR
+            value: /certs
+        volumeMounts:
+          - name: docker-certs
+            mountPath: /certs
+          - name: dind-storage
+            mountPath: /var/lib/docker
+    volumes:
+      - name: docker-certs
+        emptyDir: {}
+      - name: dind-storage
+        emptyDir: {}
+      - name: registry-auth
+        secret:
+          secretName: runner-registry-dockerconfig
+          items:
+            - key: .dockerconfigjson
+              path: config.json

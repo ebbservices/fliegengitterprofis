@@ -1,0 +1,133 @@
+name: Build and Deploy
+
+on:
+  push:
+    branches: [main]
+
+env:
+  REGISTRY: registry.mobatix.de
+  FRONTEND_IMAGE: registry.mobatix.de/fliegengitter-shop
+  BACKEND_IMAGE: registry.mobatix.de/medusa-backend
+  MEDUSA_BACKEND_URL: https://admin.diefliegengitterprofis.mobatix.de
+  MEDUSA_PUBLISHABLE_KEY: pk_7d7c40a9447f172851cac9face12b4d8c1078dce64cb97470dc4b585a1bc7074
+  K8S_NAMESPACE: default
+
+jobs:
+  build-and-deploy:
+    runs-on: arc-runner-set
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Calculate next version tag
+        id: tag
+        run: |
+          AUTH=$(echo -n "admin:${REGISTRY_PASSWORD}" | base64)
+
+          LATEST=$(curl -s -H "Authorization: Basic ${AUTH}" \
+            "https://${REGISTRY}/v2/fliegengitter-shop/tags/list" \
+            | jq -r '.tags[]?' 2>/dev/null | grep '^v' | sort -V | tail -1)
+
+          if [ -z "$LATEST" ]; then
+            NEXT="v2.2.2"
+          else
+            MAJOR=$(echo "$LATEST" | sed 's/v//' | cut -d. -f1)
+            MINOR=$(echo "$LATEST" | sed 's/v//' | cut -d. -f2)
+            PATCH=$(echo "$LATEST" | sed 's/v//' | cut -d. -f3)
+
+            PATCH=$((PATCH + 1))
+            if [ "$PATCH" -gt 50 ]; then
+              MINOR=$((MINOR + 1))
+              PATCH=0
+            fi
+            NEXT="v${MAJOR}.${MINOR}.${PATCH}"
+          fi
+
+          echo "TAG=${NEXT}" >> $GITHUB_OUTPUT
+          echo "Next version: ${NEXT}"
+
+      - name: Wait for Docker daemon
+        run: |
+          for i in $(seq 1 30); do
+            docker info > /dev/null 2>&1 && break
+            sleep 1
+          done
+
+      - name: Build frontend image
+        run: |
+          docker build \
+            --build-arg NEXT_PUBLIC_MEDUSA_BACKEND_URL=${{ env.MEDUSA_BACKEND_URL }} \
+            --build-arg NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY=${{ env.MEDUSA_PUBLISHABLE_KEY }} \
+            -t ${{ env.FRONTEND_IMAGE }}:${{ steps.tag.outputs.TAG }} \
+            -f Dockerfile .
+
+      - name: Build backend image
+        run: |
+          docker build \
+            -t ${{ env.BACKEND_IMAGE }}:${{ steps.tag.outputs.TAG }} \
+            -f backend/Dockerfile backend/
+
+      - name: Push images
+        run: |
+          docker push ${{ env.FRONTEND_IMAGE }}:${{ steps.tag.outputs.TAG }}
+          docker push ${{ env.BACKEND_IMAGE }}:${{ steps.tag.outputs.TAG }}
+
+      - name: Deploy to Kubernetes
+        run: |
+          TAG="${{ steps.tag.outputs.TAG }}"
+          kubectl set image deployment/fliegengitter-shop \
+            fliegengitter-shop=${{ env.FRONTEND_IMAGE }}:${TAG} \
+            -n ${{ env.K8S_NAMESPACE }}
+          kubectl set image deployment/medusa-backend \
+            medusa-backend=${{ env.BACKEND_IMAGE }}:${TAG} \
+            -n ${{ env.K8S_NAMESPACE }}
+
+      - name: Wait for rollout
+        run: |
+          kubectl rollout status deployment/fliegengitter-shop -n ${{ env.K8S_NAMESPACE }} --timeout=300s
+          kubectl rollout status deployment/medusa-backend -n ${{ env.K8S_NAMESPACE }} --timeout=300s
+
+      - name: Cleanup old registry tags (keep latest 10)
+        if: always()
+        run: |
+          AUTH=$(echo -n "admin:${REGISTRY_PASSWORD}" | base64)
+          REG="https://${REGISTRY}"
+
+          cleanup_repo() {
+            REPO=$1
+            echo "Cleaning up $REPO..."
+
+            TAGS=$(curl -s -H "Authorization: Basic ${AUTH}" \
+              "${REG}/v2/${REPO}/tags/list" \
+              | jq -r '.tags[]?' 2>/dev/null | grep '^v' | sort -V)
+
+            COUNT=$(echo "$TAGS" | grep -c .)
+            if [ "$COUNT" -le 10 ]; then
+              echo "  Only $COUNT tags, nothing to clean"
+              return
+            fi
+
+            DELETE_TAGS=$(echo "$TAGS" | head -n -10)
+            for T in $DELETE_TAGS; do
+              DIGEST=$(curl -s -I -H "Authorization: Basic ${AUTH}" \
+                -H "Accept: application/vnd.docker.distribution.manifest.v2+json" \
+                "${REG}/v2/${REPO}/manifests/${T}" \
+                | grep -i docker-content-digest | awk '{print $2}' | tr -d '\r')
+
+              if [ -n "$DIGEST" ]; then
+                curl -s -X DELETE -H "Authorization: Basic ${AUTH}" \
+                  "${REG}/v2/${REPO}/manifests/${DIGEST}"
+                echo "  Deleted $T ($DIGEST)"
+              fi
+            done
+          }
+
+          cleanup_repo "fliegengitter-shop"
+          cleanup_repo "medusa-backend"
+
+      - name: Deployment status
+        if: always()
+        run: |
+          echo "=== Deployed version: ${{ steps.tag.outputs.TAG }} ==="
+          kubectl get pods -n ${{ env.K8S_NAMESPACE }}
+          kubectl get deployments -n ${{ env.K8S_NAMESPACE }}
