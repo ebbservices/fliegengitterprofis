@@ -1,26 +1,14 @@
-# syntax=docker/dockerfile:1.7
-
-# Base
-FROM node:20-alpine AS base
+# Build
+FROM node:20-alpine AS builder
 WORKDIR /app
 
-# Dependencies
-FROM base AS deps
 COPY package.json package-lock.json* ./
-RUN --mount=type=cache,target=/root/.npm npm ci
+RUN npm ci
 
-# Build
-FROM base AS builder
-COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN npm run build
 
-# Production dependencies only
-FROM base AS prod-deps
-COPY package.json package-lock.json* ./
-RUN --mount=type=cache,target=/root/.npm npm ci --omit=dev
-
-# Runner
+# Production
 FROM node:20-alpine AS runner
 
 RUN addgroup --system --gid 1001 nodejs && \
@@ -28,9 +16,11 @@ RUN addgroup --system --gid 1001 nodejs && \
 
 WORKDIR /app
 
-COPY --from=prod-deps --chown=medusa:nodejs /app/node_modules ./node_modules
+# Production dependencies only
+COPY package.json package-lock.json* ./
+RUN npm ci --omit=dev
+
 COPY --from=builder --chown=medusa:nodejs /app/.medusa ./.medusa
-COPY --from=builder --chown=medusa:nodejs /app/package.json ./package.json
 COPY --from=builder --chown=medusa:nodejs /app/medusa-config.ts ./medusa-config.ts
 COPY --from=builder --chown=medusa:nodejs /app/tsconfig.json ./tsconfig.json
 COPY --from=builder --chown=medusa:nodejs /app/src ./src
