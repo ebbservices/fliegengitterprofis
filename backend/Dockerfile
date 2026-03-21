@@ -22,11 +22,9 @@ RUN addgroup --system --gid 1001 nodejs && \
 
 WORKDIR /app
 
-# Production dependencies only
-COPY package.json package-lock.json* ./
-RUN npm ci --omit=dev
-
 COPY --from=builder --chown=medusa:nodejs /app/.medusa ./.medusa
+COPY --from=builder --chown=medusa:nodejs /app/node_modules ./node_modules
+COPY --from=builder --chown=medusa:nodejs /app/package.json ./package.json
 COPY --from=builder --chown=medusa:nodejs /app/medusa-config.ts ./medusa-config.ts
 COPY --from=builder --chown=medusa:nodejs /app/tsconfig.json ./tsconfig.json
 COPY --from=builder --chown=medusa:nodejs /app/src ./src
