@@ -10,18 +10,21 @@ interface OrderItem {
   selections: Record<string, string>;
 }
 
+interface AddressData {
+  first_name: string;
+  last_name: string;
+  address_1: string;
+  address_2?: string;
+  postal_code: string;
+  city: string;
+  country_code: string;
+  phone?: string;
+}
+
 interface PlaceOrderBody {
   email: string;
-  billing_address: {
-    first_name: string;
-    last_name: string;
-    address_1: string;
-    address_2?: string;
-    postal_code: string;
-    city: string;
-    country_code: string;
-    phone?: string;
-  };
+  billing_address: AddressData;
+  shipping_address?: AddressData;
   items: OrderItem[];
   shipping_cost_cents: number;
   customer_id?: string;
@@ -68,32 +71,29 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
       },
     }));
 
+    // Adressen aufbereiten
+    const shippingAddr = body.shipping_address || body.billing_address;
+    const billingAddr = body.billing_address;
+
+    const mapAddress = (addr: AddressData) => ({
+      first_name: addr.first_name,
+      last_name: addr.last_name,
+      address_1: addr.address_1,
+      address_2: addr.address_2 || "",
+      city: addr.city,
+      postal_code: addr.postal_code,
+      country_code: addr.country_code,
+      phone: addr.phone || "",
+    });
+
     // Bestellung erstellen
     const order = await orderModule.createOrders({
       region_id: region.id,
       email: body.email,
       customer_id: body.customer_id || undefined,
       currency_code: region.currency_code,
-      shipping_address: {
-        first_name: body.billing_address.first_name,
-        last_name: body.billing_address.last_name,
-        address_1: body.billing_address.address_1,
-        address_2: body.billing_address.address_2 || "",
-        city: body.billing_address.city,
-        postal_code: body.billing_address.postal_code,
-        country_code: body.billing_address.country_code,
-        phone: body.billing_address.phone || "",
-      },
-      billing_address: {
-        first_name: body.billing_address.first_name,
-        last_name: body.billing_address.last_name,
-        address_1: body.billing_address.address_1,
-        address_2: body.billing_address.address_2 || "",
-        city: body.billing_address.city,
-        postal_code: body.billing_address.postal_code,
-        country_code: body.billing_address.country_code,
-        phone: body.billing_address.phone || "",
-      },
+      shipping_address: mapAddress(shippingAddr),
+      billing_address: mapAddress(billingAddr),
       items: orderItems,
       shipping_methods: [
         {

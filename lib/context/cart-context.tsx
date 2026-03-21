@@ -8,7 +8,7 @@ import {
   type ReactNode,
 } from 'react';
 import { sdk } from '@/lib/medusa';
-import { MEDUSA_BACKEND_URL } from '@/lib/config';
+import { MEDUSA_BACKEND_URL, MEDUSA_PUBLISHABLE_KEY } from '@/lib/config';
 import type { CartItemMetadata } from '@/lib/types';
 
 interface CartItem {
@@ -118,9 +118,16 @@ export function CartProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     async function init() {
       setIsLoading(true);
+      // localCart immer laden (wird für Konfigurator-Produkte genutzt)
+      loadLocalCart();
       try {
-        const response = await fetch(`${MEDUSA_BACKEND_URL}/store/products?limit=0`, {
+        const healthHeaders: Record<string, string> = {};
+        if (MEDUSA_PUBLISHABLE_KEY) {
+          healthHeaders['x-publishable-api-key'] = MEDUSA_PUBLISHABLE_KEY;
+        }
+        const response = await fetch(`${MEDUSA_BACKEND_URL}/store/products?limit=1&fields=id`, {
           signal: AbortSignal.timeout(3000),
+          headers: healthHeaders,
         });
         if (response.ok) {
           await initMedusaCart();
@@ -129,7 +136,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
         }
       } catch {
         setUseMedusa(false);
-        loadLocalCart();
       } finally {
         setIsLoading(false);
       }
@@ -137,10 +143,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
     init();
   }, [initMedusaCart, loadLocalCart]);
 
-  // LocalStorage Events abhören (Fallback-Modus)
+  // LocalStorage Events abhören
   useEffect(() => {
-    if (useMedusa) return;
-
     const handleStorageUpdate = () => loadLocalCart();
     window.addEventListener('cartUpdated', handleStorageUpdate);
     window.addEventListener('storage', handleStorageUpdate);
@@ -148,7 +152,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       window.removeEventListener('cartUpdated', handleStorageUpdate);
       window.removeEventListener('storage', handleStorageUpdate);
     };
-  }, [useMedusa, loadLocalCart]);
+  }, [loadLocalCart]);
 
   const refreshCart = useCallback(async () => {
     if (!useMedusa) {
@@ -233,10 +237,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   // Cart leeren
   const clearCart = useCallback(async () => {
+    // localCart immer leeren (Konfigurator-Produkte)
+    localStorage.removeItem('cart');
+    setLocalCart([]);
+
     if (useMedusa) {
       clearCartIdCookie();
       setCart(null);
-      // Neuen Cart erstellen
       try {
         const response = await sdk.store.cart.create({});
         if (response.cart) {
@@ -246,15 +253,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
       } catch {
         // silent
       }
-    } else {
-      localStorage.removeItem('cart');
-      setLocalCart([]);
     }
   }, [useMedusa]);
 
-  const cartCount = useMedusa
-    ? cart?.items.length ?? 0
-    : localCart.length;
+  // localCart wird immer für Konfigurator-Produkte genutzt
+  const cartCount = localCart.length;
 
   return (
     <CartContext.Provider

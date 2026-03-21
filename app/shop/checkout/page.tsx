@@ -6,9 +6,24 @@ import { useAuth } from '@/lib/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { MEDUSA_BACKEND_URL, MEDUSA_PUBLISHABLE_KEY } from '@/lib/config';
+import { sdk } from '@/lib/medusa';
 
 type AccountMode = 'guest' | 'create-account' | 'logged-in';
 type Step = 'mode' | 'address' | 'payment' | 'review';
+
+interface SavedAddress {
+  id: string;
+  first_name: string | null;
+  last_name: string | null;
+  address_1: string | null;
+  address_2: string | null;
+  postal_code: string | null;
+  city: string | null;
+  country_code: string | null;
+  phone: string | null;
+  is_default_shipping: boolean;
+  is_default_billing: boolean;
+}
 
 interface Address {
   first_name: string;
@@ -142,6 +157,17 @@ export default function CheckoutPage() {
   const [loginError, setLoginError] = useState('');
   const [loginLoading, setLoginLoading] = useState(false);
 
+  // Registrierung wurde im Adress-Schritt bereits durchgeführt
+  const [registeredCustomerId, setRegisteredCustomerId] = useState<string | null>(null);
+
+  // Abweichende Rechnungsadresse
+  const [differentBilling, setDifferentBilling] = useState(false);
+  const [separateBillingAddress, setSeparateBillingAddress] = useState<Address>(emptyAddress);
+
+  // Gespeicherte Adressen
+  const [savedAddresses, setSavedAddresses] = useState<SavedAddress[]>([]);
+  const [selectedAddressId, setSelectedAddressId] = useState<string | 'new'>('new');
+
   // Initialize based on auth state
   useEffect(() => {
     if (authLoading || initialized) return;
@@ -149,11 +175,42 @@ export default function CheckoutPage() {
     if (isAuthenticated && customer) {
       setAccountMode('logged-in');
       setEmail(customer.email);
-      setBillingAddress((prev) => ({
-        ...prev,
-        first_name: customer.first_name || '',
-        last_name: customer.last_name || '',
-      }));
+
+      // Gespeicherte Adressen laden (async)
+      (async () => {
+        try {
+          const addrRes = await sdk.store.customer.listAddress();
+          const addresses = (addrRes as { addresses?: SavedAddress[] }).addresses ?? [];
+          if (addresses.length > 0) {
+            setSavedAddresses(addresses);
+            const defaultAddr = addresses.find((a: SavedAddress) => a.is_default_shipping) || addresses[0];
+            setSelectedAddressId(defaultAddr.id);
+            setBillingAddress({
+              first_name: defaultAddr.first_name || customer.first_name || '',
+              last_name: defaultAddr.last_name || customer.last_name || '',
+              address_1: defaultAddr.address_1 || '',
+              address_2: defaultAddr.address_2 || '',
+              postal_code: defaultAddr.postal_code || '',
+              city: defaultAddr.city || '',
+              country_code: defaultAddr.country_code || 'de',
+              phone: defaultAddr.phone || '',
+            });
+          } else {
+            setBillingAddress((prev) => ({
+              ...prev,
+              first_name: customer.first_name || '',
+              last_name: customer.last_name || '',
+            }));
+          }
+        } catch {
+          setBillingAddress((prev) => ({
+            ...prev,
+            first_name: customer.first_name || '',
+            last_name: customer.last_name || '',
+          }));
+        }
+      })();
+
       setStep('address');
     } else if (!backendAvailable) {
       // Backend nicht erreichbar → direkt Gast
@@ -231,6 +288,7 @@ export default function CheckoutPage() {
         setAccountMode('logged-in');
         setEmail(loginEmail);
         setShowLoginForm(false);
+        setError('');
         setStep('address');
       } else {
         setLoginError(result.error || 'Login fehlgeschlagen');
@@ -288,32 +346,7 @@ export default function CheckoutPage() {
         headers['x-publishable-api-key'] = MEDUSA_PUBLISHABLE_KEY;
       }
 
-      // Schritt 1: Bei Kontoerstellung ZUERST registrieren (vor der Bestellung)
-      let newCustomerId: string | null = null;
-      if (accountMode === 'create-account') {
-        const regResult = await register({
-          email,
-          password,
-          first_name: billingAddress.first_name,
-          last_name: billingAddress.last_name,
-        });
-
-        if (!regResult.success) {
-          const errorMsg = regResult.error || '';
-          if (errorMsg.toLowerCase().includes('already exists') || errorMsg.toLowerCase().includes('bereits')) {
-            setError('Es existiert bereits ein Konto mit dieser E-Mail-Adresse. Bitte melden Sie sich an oder bestellen Sie als Gast.');
-            setStep('mode');
-          } else {
-            setError(`Kontoerstellung fehlgeschlagen: ${errorMsg}`);
-          }
-          setIsSubmitting(false);
-          return;
-        }
-
-        newCustomerId = regResult.customerId || null;
-      }
-
-      // Schritt 2: Bestellung aufgeben
+      // Bestellung aufgeben
       const orderItems = localCart.map((item) => {
         const selections: Record<string, string> = {};
         for (const [key, value] of Object.entries(item)) {
@@ -331,9 +364,11 @@ export default function CheckoutPage() {
         };
       });
 
+      const effectiveBillingAddress = differentBilling ? separateBillingAddress : billingAddress;
       const orderBody: Record<string, unknown> = {
         email,
-        billing_address: billingAddress,
+        billing_address: effectiveBillingAddress,
+        shipping_address: billingAddress,
         items: orderItems,
         shipping_cost_cents: Math.round(getShippingCost() * 100),
       };
@@ -341,8 +376,8 @@ export default function CheckoutPage() {
       // Customer-ID mitsenden
       if (accountMode === 'logged-in' && customer?.id) {
         orderBody.customer_id = customer.id;
-      } else if (accountMode === 'create-account' && newCustomerId) {
-        orderBody.customer_id = newCustomerId;
+      } else if (accountMode === 'create-account' && registeredCustomerId) {
+        orderBody.customer_id = registeredCustomerId;
       }
 
       const res = await fetch(`${MEDUSA_BACKEND_URL}/store/place-order`, {
@@ -358,20 +393,54 @@ export default function CheckoutPage() {
 
       const orderResult = await res.json();
 
-      // Schritt 3: Bei Kontoerstellung — Order verknüpfen + Verifizierungs-Email
+      // Bei Kontoerstellung — Order verknüpfen + Verifizierungs-Email
       let finalMode = accountMode;
-      if (accountMode === 'create-account' && newCustomerId) {
+      if (accountMode === 'create-account' && registeredCustomerId) {
         try {
           await fetch(`${MEDUSA_BACKEND_URL}/store/link-order-and-verify`, {
             method: 'POST',
             headers,
             body: JSON.stringify({
-              customer_id: newCustomerId,
+              customer_id: registeredCustomerId,
               order_id: orderResult.order_id,
             }),
           });
         } catch {
           // Verifizierung fehlgeschlagen — nicht kritisch, Bestellung ging durch
+        }
+      }
+
+      // Adresse im Kundenprofil speichern (für eingeloggte/registrierte User)
+      if ((accountMode === 'logged-in' && customer?.id) || registeredCustomerId) {
+        try {
+          // Nur speichern wenn es eine neue Adresse ist (nicht aus gespeicherten gewählt)
+          if (selectedAddressId === 'new' || !savedAddresses.length) {
+            await sdk.store.customer.createAddress({
+              first_name: billingAddress.first_name,
+              last_name: billingAddress.last_name,
+              address_1: billingAddress.address_1,
+              address_2: billingAddress.address_2 || undefined,
+              postal_code: billingAddress.postal_code,
+              city: billingAddress.city,
+              country_code: billingAddress.country_code,
+              phone: billingAddress.phone || undefined,
+              is_default_shipping: true,
+            });
+          }
+          if (differentBilling) {
+            await sdk.store.customer.createAddress({
+              first_name: separateBillingAddress.first_name,
+              last_name: separateBillingAddress.last_name,
+              address_1: separateBillingAddress.address_1,
+              address_2: separateBillingAddress.address_2 || undefined,
+              postal_code: separateBillingAddress.postal_code,
+              city: separateBillingAddress.city,
+              country_code: separateBillingAddress.country_code,
+              is_default_billing: true,
+            });
+          }
+        } catch {
+          // Adress-Speicherung nicht kritisch
         }
       }
 
@@ -534,7 +603,70 @@ export default function CheckoutPage() {
             {/* Step: Address */}
             {step === 'address' && (
               <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
-                <h2 className="text-2xl font-bold text-slate-900 mb-6">Rechnungs- & Lieferadresse</h2>
+                <h2 className="text-2xl font-bold text-slate-900 mb-6">Lieferadresse</h2>
+
+                {/* Gespeicherte Adressen für eingeloggte User */}
+                {accountMode === 'logged-in' && savedAddresses.length > 0 && (
+                  <div className="mb-6">
+                    <label className="block text-sm font-semibold text-slate-700 mb-3">Gespeicherte Adresse</label>
+                    <div className="space-y-2">
+                      {savedAddresses.map((addr) => (
+                        <label
+                          key={addr.id}
+                          className={`flex items-start gap-3 p-4 border-2 rounded-xl cursor-pointer transition-colors ${
+                            selectedAddressId === addr.id ? 'border-orange-500 bg-orange-50' : 'border-gray-200 hover:border-gray-400'
+                          }`}
+                        >
+                          <input
+                            type="radio"
+                            name="savedAddress"
+                            checked={selectedAddressId === addr.id}
+                            onChange={() => {
+                              setSelectedAddressId(addr.id);
+                              setBillingAddress({
+                                first_name: addr.first_name || '',
+                                last_name: addr.last_name || '',
+                                address_1: addr.address_1 || '',
+                                address_2: addr.address_2 || '',
+                                postal_code: addr.postal_code || '',
+                                city: addr.city || '',
+                                country_code: addr.country_code || 'de',
+                                phone: addr.phone || '',
+                              });
+                            }}
+                            className="w-5 h-5 mt-0.5 text-orange-500"
+                          />
+                          <div className="text-sm text-slate-700">
+                            <p className="font-semibold">{addr.first_name} {addr.last_name}</p>
+                            <p>{addr.address_1}{addr.address_2 ? `, ${addr.address_2}` : ''}</p>
+                            <p>{addr.postal_code} {addr.city}, {COUNTRY_NAMES[addr.country_code || 'de'] || addr.country_code?.toUpperCase()}</p>
+                          </div>
+                        </label>
+                      ))}
+                      <label
+                        className={`flex items-center gap-3 p-4 border-2 rounded-xl cursor-pointer transition-colors ${
+                          selectedAddressId === 'new' ? 'border-orange-500 bg-orange-50' : 'border-gray-200 hover:border-gray-400'
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          name="savedAddress"
+                          checked={selectedAddressId === 'new'}
+                          onChange={() => {
+                            setSelectedAddressId('new');
+                            setBillingAddress({
+                              ...emptyAddress,
+                              first_name: customer?.first_name || '',
+                              last_name: customer?.last_name || '',
+                            });
+                          }}
+                          className="w-5 h-5 text-orange-500"
+                        />
+                        <span className="text-sm font-semibold text-slate-700">Neue Adresse eingeben</span>
+                      </label>
+                    </div>
+                  </div>
+                )}
 
                 <div className="space-y-4">
                   <AddressField label="E-Mail-Adresse" value={email} onChange={setEmail} type="email" placeholder="ihre@email.de" />
@@ -595,6 +727,51 @@ export default function CheckoutPage() {
                   </div>
 
                   <AddressField label="Telefon" value={billingAddress.phone} onChange={(v) => setBillingAddress({ ...billingAddress, phone: v })} type="tel" required={false} placeholder="Für Rückfragen zur Lieferung" />
+
+                  {/* Abweichende Rechnungsadresse */}
+                  <div className="pt-4 border-t border-gray-200">
+                    <label className="flex items-center gap-3 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={differentBilling}
+                        onChange={(e) => setDifferentBilling(e.target.checked)}
+                        className="w-5 h-5 text-orange-500 rounded border-gray-300 focus:ring-orange-500"
+                      />
+                      <span className="text-sm font-semibold text-slate-700">Abweichende Rechnungsadresse angeben</span>
+                    </label>
+                  </div>
+
+                  {differentBilling && (
+                    <div className="pt-4 space-y-4 border-t border-gray-200">
+                      <h3 className="text-lg font-bold text-slate-900">Rechnungsadresse</h3>
+                      <div className="grid grid-cols-2 gap-4">
+                        <AddressField label="Vorname" value={separateBillingAddress.first_name} onChange={(v) => setSeparateBillingAddress({ ...separateBillingAddress, first_name: v })} />
+                        <AddressField label="Nachname" value={separateBillingAddress.last_name} onChange={(v) => setSeparateBillingAddress({ ...separateBillingAddress, last_name: v })} />
+                      </div>
+                      <AddressField label="Straße & Hausnummer" value={separateBillingAddress.address_1} onChange={(v) => setSeparateBillingAddress({ ...separateBillingAddress, address_1: v })} />
+                      <AddressField label="Adresszusatz" value={separateBillingAddress.address_2} onChange={(v) => setSeparateBillingAddress({ ...separateBillingAddress, address_2: v })} required={false} placeholder="z.B. Wohnung 4" />
+                      <div className="grid grid-cols-2 gap-4">
+                        <AddressField label="PLZ" value={separateBillingAddress.postal_code} onChange={(v) => setSeparateBillingAddress({ ...separateBillingAddress, postal_code: v })} />
+                        <AddressField label="Stadt" value={separateBillingAddress.city} onChange={(v) => setSeparateBillingAddress({ ...separateBillingAddress, city: v })} />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-semibold text-slate-700 mb-2">Land</label>
+                        <select
+                          value={separateBillingAddress.country_code}
+                          onChange={(e) => setSeparateBillingAddress({ ...separateBillingAddress, country_code: e.target.value })}
+                          className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:border-orange-500 focus:outline-none bg-white"
+                        >
+                          {availableCountries
+                            .sort((a, b) => a.display_name.localeCompare(b.display_name, 'de'))
+                            .map((country) => (
+                              <option key={country.iso_2} value={country.iso_2}>
+                                {country.display_name}
+                              </option>
+                            ))}
+                        </select>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {error && (
@@ -613,9 +790,13 @@ export default function CheckoutPage() {
                     </button>
                   )}
                   <button
-                    onClick={() => {
+                    onClick={async () => {
                       if (!email || !billingAddress.first_name || !billingAddress.last_name || !billingAddress.address_1 || !billingAddress.postal_code || !billingAddress.city) {
-                        setError('Bitte füllen Sie alle Pflichtfelder aus.');
+                        setError('Bitte füllen Sie alle Pflichtfelder der Lieferadresse aus.');
+                        return;
+                      }
+                      if (differentBilling && (!separateBillingAddress.first_name || !separateBillingAddress.last_name || !separateBillingAddress.address_1 || !separateBillingAddress.postal_code || !separateBillingAddress.city)) {
+                        setError('Bitte füllen Sie alle Pflichtfelder der Rechnungsadresse aus.');
                         return;
                       }
                       if (accountMode === 'create-account') {
@@ -627,13 +808,38 @@ export default function CheckoutPage() {
                           setError('Die Passwörter stimmen nicht überein.');
                           return;
                         }
+                        // Registrierung sofort durchführen
+                        setIsSubmitting(true);
+                        setError('');
+                        const regResult = await register({
+                          email,
+                          password,
+                          first_name: billingAddress.first_name,
+                          last_name: billingAddress.last_name,
+                        });
+                        setIsSubmitting(false);
+                        if (!regResult.success) {
+                          const errorMsg = regResult.error || '';
+                          if (errorMsg.toLowerCase().includes('already exists') || errorMsg.toLowerCase().includes('bereits')) {
+                            setError('');
+                            setLoginError('Es existiert bereits ein Konto mit dieser E-Mail-Adresse. Bitte melden Sie sich an oder bestellen Sie als Gast.');
+                            setShowLoginForm(true);
+                            setLoginEmail(email);
+                            setStep('mode');
+                          } else {
+                            setError(`Kontoerstellung fehlgeschlagen: ${errorMsg}`);
+                          }
+                          return;
+                        }
+                        setRegisteredCustomerId(regResult.customerId || null);
                       }
                       setError('');
                       setStep('payment');
                     }}
-                    className="flex-1 bg-gradient-to-r from-orange-500 to-orange-600 text-white px-6 py-4 rounded-xl font-bold hover:from-orange-600 hover:to-orange-700 transition-all"
+                    disabled={isSubmitting}
+                    className="flex-1 bg-gradient-to-r from-orange-500 to-orange-600 text-white px-6 py-4 rounded-xl font-bold hover:from-orange-600 hover:to-orange-700 transition-all disabled:opacity-50"
                   >
-                    Weiter zur Zahlung
+                    {isSubmitting ? 'Konto wird geprüft...' : 'Weiter zur Zahlung'}
                   </button>
                 </div>
               </div>
@@ -679,9 +885,9 @@ export default function CheckoutPage() {
                 <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
                   <h2 className="text-2xl font-bold text-slate-900 mb-4">Bestellübersicht</h2>
 
-                  <div className="grid md:grid-cols-2 gap-6 mb-6">
+                  <div className={`grid ${differentBilling ? 'md:grid-cols-3' : 'md:grid-cols-2'} gap-6 mb-6`}>
                     <div>
-                      <h3 className="font-semibold text-slate-900 mb-2">Rechnungsadresse</h3>
+                      <h3 className="font-semibold text-slate-900 mb-2">Lieferadresse</h3>
                       <div className="text-sm text-slate-600">
                         <p>{billingAddress.first_name} {billingAddress.last_name}</p>
                         <p>{billingAddress.address_1}</p>
@@ -691,6 +897,18 @@ export default function CheckoutPage() {
                         <p>{email}</p>
                       </div>
                     </div>
+                    {differentBilling && (
+                      <div>
+                        <h3 className="font-semibold text-slate-900 mb-2">Rechnungsadresse</h3>
+                        <div className="text-sm text-slate-600">
+                          <p>{separateBillingAddress.first_name} {separateBillingAddress.last_name}</p>
+                          <p>{separateBillingAddress.address_1}</p>
+                          {separateBillingAddress.address_2 && <p>{separateBillingAddress.address_2}</p>}
+                          <p>{separateBillingAddress.postal_code} {separateBillingAddress.city}</p>
+                          <p>{COUNTRY_NAMES[separateBillingAddress.country_code] || separateBillingAddress.country_code.toUpperCase()}</p>
+                        </div>
+                      </div>
+                    )}
                     <div>
                       <h3 className="font-semibold text-slate-900 mb-2">Versand & Zahlung</h3>
                       <div className="text-sm text-slate-600">
