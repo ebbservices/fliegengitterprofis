@@ -64,16 +64,20 @@ jobs:
 
       - name: Install kubectl and helm
         run: |
+          mkdir -p $HOME/.local/bin
+
           curl -LO "https://dl.k8s.io/release/$(curl -sL https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
           chmod +x kubectl
+          mv kubectl $HOME/.local/bin/
 
           curl -fsSL https://get.helm.sh/helm-v3.16.3-linux-amd64.tar.gz | tar xz
-          mv linux-amd64/helm .
-          chmod +x helm
+          mv linux-amd64/helm $HOME/.local/bin/
+          chmod +x $HOME/.local/bin/helm
+          rm -rf linux-amd64
 
-          echo "${PWD}" >> $GITHUB_PATH
-          ./kubectl version --client
-          ./helm version
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+          $HOME/.local/bin/kubectl version --client
+          $HOME/.local/bin/helm version
 
       - name: Wait for Docker daemon
         run: |
