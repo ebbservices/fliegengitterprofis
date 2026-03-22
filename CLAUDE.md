@@ -6,7 +6,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 E-commerce shop for custom-made insect screens (Fliegengitter), plissee systems, and light shaft covers. German-language storefront with real-time price configurators. Currently at MVP stage — frontend complete, Medusa backend integration in progress.
 
-Live dev: https://dev.diefliegengitterprofis.mobatix.de
+Dev: https://dev.diefliegengitterprofis.mobatix.de
+Prod: https://www.diefliegengitterprofis.de
 
 ## Commands
 
@@ -27,9 +28,19 @@ npm run seed         # Seed database (medusa exec ./src/scripts/seed.ts)
 npm run start        # Start Medusa production
 ```
 
-### Deployment
-```powershell
-.\deploy-to-k8s.ps1 -Tag v1.0.0   # Build Docker image, push to registry, deploy to K8s
+### Deployment (automated via CI/CD)
+```bash
+# Push to dev branch → deploys to dev environment
+# Merge to main → deploys to prod environment
+
+# Manual Helm deploy (if needed)
+helm upgrade --install fliegengitter-dev ./helm/fliegengitter \
+  -n diefliegengitterprofis -f helm/fliegengitter/values-dev.yaml \
+  --set frontend.image.tag=<tag>-dev --set backend.image.tag=<tag>
+
+# One-time environment setup
+pip install psycopg2-binary
+py -m scripts.setup-env --pg-root-user postgres --pg-root-pass <pw> --env dev
 ```
 
 ## Architecture
@@ -64,11 +75,12 @@ Final = max(Total, Minimum Price)
 Color surcharges: Weiß €0, Anthrazit/Braun €15, Silber €10. Mesh: Standard €0, Katzennetz €15, Pollenschutz €20, Edelstahl €35. Mounting: Schrauben €0, Klick €10, Einhänge €15.
 
 ### Infrastructure
-- Docker multi-stage build (node:20-alpine), port 3000
-- Kubernetes: 2 replicas, ClusterIP service, nginx ingress with Let's Encrypt
+- Docker multi-stage build (node:20-alpine), port 3000 (frontend), 9000 (backend)
+- Kubernetes namespace `diefliegengitterprofis`, Helm Charts for deployment
+- CI/CD: GitHub Actions, push to `dev` branch → dev deploy, push to `main` → prod deploy
 - Registry: registry.mobatix.de
-- DB: PostgreSQL at 10.0.0.6:5432 (dev DB: `diefliegengitterprofis_dev`)
-- Redis: K8s service `redis.default.svc.cluster.local:6379`
+- DB: PostgreSQL at 10.0.0.6:5432 (dev: `dfp_dev`, prod: `dfp_prod`)
+- Redis: shared in default namespace `redis.default.svc.cluster.local:6379` (dev: DB 0, prod: DB 1)
 
 ### Key Config
 - `next.config.ts` — React Compiler enabled, standalone output, WebP images, SVG allowed

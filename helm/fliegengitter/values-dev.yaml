@@ -1,0 +1,19 @@
+global:
+  environment: dev
+
+frontend:
+  ingress:
+    host: dev.dfp.mobatix.de
+    tlsSecretName: fliegengitter-shop-tls-dev
+
+backend:
+  secretName: medusa-secrets-dev
+  ingress:
+    host: admin.dfp.mobatix.de
+    tlsSecretName: medusa-backend-tls-dev
+  env:
+    NODE_ENV: "production"
+    STORE_CORS: "https://dev.dfp.mobatix.de"
+    ADMIN_CORS: "https://admin.dfp.mobatix.de"
+    AUTH_CORS: "https://dev.dfp.mobatix.de,https://admin.dfp.mobatix.de"
+    BACKEND_PUBLIC_URL: "https://admin.dfp.mobatix.de"

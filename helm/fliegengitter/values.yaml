@@ -1,0 +1,92 @@
+global:
+  environment: dev
+  registry: registry.mobatix.de
+  imagePullSecrets:
+    - name: registry-secret
+
+frontend:
+  replicaCount: 1
+  image:
+    repository: registry.mobatix.de/fliegengitter-shop
+    tag: "latest"
+    pullPolicy: IfNotPresent
+  port: 3000
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "250m"
+    limits:
+      memory: "512Mi"
+      cpu: "500m"
+  livenessProbe:
+    path: /
+    initialDelaySeconds: 30
+    periodSeconds: 10
+  readinessProbe:
+    path: /
+    initialDelaySeconds: 5
+    periodSeconds: 5
+  ingress:
+    enabled: true
+    className: nginx
+    annotations:
+      cert-manager.io/cluster-issuer: "letsencrypt-prod"
+      nginx.ingress.kubernetes.io/ssl-redirect: "true"
+      nginx.ingress.kubernetes.io/proxy-body-size: "10m"
+      nginx.ingress.kubernetes.io/limit-rps: "10"
+      nginx.ingress.kubernetes.io/limit-rpm: "300"
+      nginx.ingress.kubernetes.io/ssl-protocols: "TLSv1.2 TLSv1.3"
+      nginx.ingress.kubernetes.io/configuration-snippet: |
+        more_set_headers "X-Content-Type-Options: nosniff";
+        more_set_headers "X-Frame-Options: DENY";
+        more_set_headers "Referrer-Policy: strict-origin-when-cross-origin";
+        more_set_headers "Permissions-Policy: camera=(), microphone=(), geolocation=()";
+    host: ""
+    tlsSecretName: ""
+
+backend:
+  replicaCount: 1
+  strategy: Recreate
+  image:
+    repository: registry.mobatix.de/medusa-backend
+    tag: "latest"
+    pullPolicy: IfNotPresent
+  port: 9000
+  secretName: ""
+  resources:
+    requests:
+      memory: "512Mi"
+      cpu: "250m"
+    limits:
+      memory: "1Gi"
+      cpu: "1000m"
+  livenessProbe:
+    path: /health
+    initialDelaySeconds: 45
+    periodSeconds: 15
+  readinessProbe:
+    path: /health
+    initialDelaySeconds: 15
+    periodSeconds: 5
+  ingress:
+    enabled: true
+    className: nginx
+    annotations:
+      cert-manager.io/cluster-issuer: "letsencrypt-prod"
+      nginx.ingress.kubernetes.io/ssl-redirect: "true"
+      nginx.ingress.kubernetes.io/proxy-body-size: "50m"
+      nginx.ingress.kubernetes.io/limit-rps: "10"
+      nginx.ingress.kubernetes.io/limit-rpm: "300"
+    host: ""
+    tlsSecretName: ""
+  persistence:
+    enabled: true
+    storageClass: longhorn
+    size: 5Gi
+    accessMode: ReadWriteOnce
+  env:
+    NODE_ENV: "production"
+    STORE_CORS: ""
+    ADMIN_CORS: ""
+    AUTH_CORS: ""
+    BACKEND_PUBLIC_URL: ""

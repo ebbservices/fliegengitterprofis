@@ -1,0 +1,20 @@
+global:
+  environment: prod
+
+frontend:
+  replicaCount: 2
+  ingress:
+    host: www.diefliegengitterprofis.de
+    tlsSecretName: fliegengitter-shop-tls-prod
+
+backend:
+  secretName: medusa-secrets-prod
+  ingress:
+    host: admin.diefliegengitterprofis.de
+    tlsSecretName: medusa-backend-tls-prod
+  env:
+    NODE_ENV: "production"
+    STORE_CORS: "https://www.diefliegengitterprofis.de"
+    ADMIN_CORS: "https://admin.diefliegengitterprofis.de"
+    AUTH_CORS: "https://www.diefliegengitterprofis.de,https://admin.diefliegengitterprofis.de"
+    BACKEND_PUBLIC_URL: "https://admin.diefliegengitterprofis.de"

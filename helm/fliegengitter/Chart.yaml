@@ -1,0 +1,5 @@
+apiVersion: v2
+name: fliegengitter
+description: Fliegengitter Shop - Next.js Frontend + Medusa Backend
+version: 0.1.0
+appVersion: "2.2.1"

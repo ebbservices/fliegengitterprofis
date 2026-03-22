@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "fliegengitter.backend.name" . }}
+  labels:
+    {{- include "fliegengitter.labels" . | nindent 4 }}
+spec:
+  selector:
+    {{- include "fliegengitter.backend.selectorLabels" . | nindent 4 }}
+  ports:
+    - protocol: TCP
+      port: {{ .Values.backend.port }}
+      targetPort: {{ .Values.backend.port }}
+  type: ClusterIP

@@ -23,6 +23,18 @@ template:
               secretKeyRef:
                 name: registry-api-credentials
                 key: password
+          - name: MEDUSA_PK_DEV
+            valueFrom:
+              secretKeyRef:
+                name: medusa-publishable-key-dev
+                key: key
+                optional: true
+          - name: MEDUSA_PK_PROD
+            valueFrom:
+              secretKeyRef:
+                name: medusa-publishable-key-prod
+                key: key
+                optional: true
         volumeMounts:
           - name: docker-certs
             mountPath: /certs

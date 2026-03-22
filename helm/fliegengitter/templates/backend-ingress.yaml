@@ -1,0 +1,27 @@
+{{- if .Values.backend.ingress.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "fliegengitter.backend.name" . }}-ingress
+  labels:
+    {{- include "fliegengitter.labels" . | nindent 4 }}
+  annotations:
+    {{- toYaml .Values.backend.ingress.annotations | nindent 4 }}
+spec:
+  ingressClassName: {{ .Values.backend.ingress.className }}
+  tls:
+    - hosts:
+        - {{ .Values.backend.ingress.host }}
+      secretName: {{ .Values.backend.ingress.tlsSecretName }}
+  rules:
+    - host: {{ .Values.backend.ingress.host }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "fliegengitter.backend.name" . }}
+                port:
+                  number: {{ .Values.backend.port }}
+{{- end }}

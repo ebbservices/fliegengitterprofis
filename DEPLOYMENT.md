@@ -1,268 +1,184 @@
 # Deployment Guide - Die Fliegengitter Profis
 
-## 🎯 Deployment-Übersicht
+## Deployment-Architektur
 
-Der Shop wird auf Kubernetes deployed mit automatisiertem CI/CD-Workflow.
+- **Helm Charts** steuern alle Kubernetes-Ressourcen
+- **GitHub Actions** CI/CD: Push auf `dev` oder `main` triggert automatisches Build + Deploy
+- **Namespace:** `diefliegengitterprofis` (Frontend + Backend), Redis shared im `default` Namespace
+- **Registry:** registry.mobatix.de
 
-## 🔧 Voraussetzungen
+## Umgebungen
 
-- Docker Desktop installiert
-- kubectl konfiguriert
-- Zugriff auf registry.mobatix.de
-- Kubernetes Cluster Zugriff
+| | Dev | Prod |
+|---|---|---|
+| **Branch** | `dev` | `main` |
+| **Frontend** | https://dev.diefliegengitterprofis.mobatix.de | https://www.diefliegengitterprofis.de |
+| **Admin** | https://admin.diefliegengitterprofis.mobatix.de/app | https://admin.diefliegengitterprofis.de/app |
+| **Datenbank** | `dfp_dev` | `dfp_prod` |
+| **Redis DB** | 0 | 1 |
+| **Replicas Frontend** | 1 | 2 |
 
-## 📦 Deployment-Prozess
+## Voraussetzungen
 
-### 1. Lokaler Build & Test
+- kubectl konfiguriert mit Cluster-Zugriff
+- Helm 3.x installiert
+- Docker (nur fuer lokales Testen)
+- Python 3.x + psycopg2-binary (fuer Setup-Script)
+
+## Ersteinrichtung (einmalig)
+
+### 1. Datenbank + Secrets einrichten
 
 ```bash
-# Dependencies installieren
-npm install
+pip install psycopg2-binary
 
-# Build testen
-npm run build
+# Dev Environment
+py -m scripts.setup-env --pg-root-user postgres --pg-root-pass <ROOT_PW> --env dev
 
-# Lokal testen
-npm start
+# Prod Environment
+py -m scripts.setup-env --pg-root-user postgres --pg-root-pass <ROOT_PW> --env prod
 ```
 
-### 2. Docker Image erstellen
+Das Script erstellt automatisch:
+- K8s Namespace `diefliegengitterprofis`
+- Registry Secret (kopiert aus default)
+- PostgreSQL Datenbank + User mit generiertem Passwort
+- K8s Secret `medusa-secrets-dev` / `medusa-secrets-prod` mit allen Credentials
+
+### 2. RBAC fuer ARC Runner
 
 ```bash
-# Image bauen
-docker build --platform linux/amd64 -t registry.mobatix.de/fliegengitter-shop:v1.0.0 .
-
-# Image testen
-docker run -p 3000:3000 registry.mobatix.de/fliegengitter-shop:v1.0.0
+kubectl apply -f k8s/arc/rbac.yaml
 ```
 
-### 3. Automatisches Deployment
+### 3. ARC Runner aktualisieren
 
-```powershell
-# Mit Version-Tag
-.\deploy-to-k8s.ps1 -Tag v1.0.0
-
-# Oder latest
-.\deploy-to-k8s.ps1
-```
-
-Das Script führt automatisch aus:
-1. ✅ Docker Image Build
-2. ✅ Registry Login
-3. ✅ Image Push
-4. ✅ Kubernetes Deployment Update
-5. ✅ Rollout Überwachung
-6. ✅ Status-Check
-
-## 🌐 Umgebungen
-
-### Development
-- **URL:** https://dev.diefliegengitterprofis.mobatix.de
-- **Namespace:** default
-- **Replicas:** 2
-- **Resources:** 256Mi RAM, 250m CPU
-
-### Staging (geplant)
-- **URL:** https://staging.diefliegengitterprofis.mobatix.de
-- **Namespace:** staging
-- **Replicas:** 2
-
-### Production (geplant)
-- **URL:** https://www.diefliegengitterprofis.de
-- **Namespace:** production
-- **Replicas:** 3
-- **Resources:** 512Mi RAM, 500m CPU
-
-## 📊 Kubernetes Ressourcen
-
-### Deployment
-```yaml
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: fliegengitter-shop
-spec:
-  replicas: 2
-  selector:
-    matchLabels:
-      app: fliegengitter-shop
-```
-
-### Service
-```yaml
-apiVersion: v1
-kind: Service
-metadata:
-  name: fliegengitter-shop
-spec:
-  type: ClusterIP
-  ports:
-    - port: 80
-      targetPort: 3000
-```
-
-### Ingress
-```yaml
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: fliegengitter-shop-ingress
-spec:
-  rules:
-  - host: dev.diefliegengitterprofis.mobatix.de
-```
-
-## 🔍 Monitoring & Debugging
-
-### Logs anzeigen
 ```bash
-# Alle Pods
-kubectl logs -l app=fliegengitter-shop -f
-
-# Spezifischer Pod
-kubectl logs fliegengitter-shop-xxxxx-xxxxx -f
+helm upgrade arc-runner-set oci://ghcr.io/actions/actions-runner-controller-charts/gha-runner-scale-set \
+  -n arc-runners -f k8s/arc/runner-values.yaml
 ```
 
-### Status prüfen
+### 4. Publishable Keys (nach erstem Seed)
+
+Nach dem ersten erfolgreichen Deploy + Seed den Medusa Publishable Key extrahieren und als Secret speichern:
+
 ```bash
-# Deployment Status
-kubectl get deployment fliegengitter-shop
+kubectl create secret generic medusa-publishable-key-dev \
+  -n arc-runners \
+  --from-literal=key="pk_xxxxx"
 
-# Pods Status
-kubectl get pods -l app=fliegengitter-shop
-
-# Service Status
-kubectl get svc fliegengitter-shop
-
-# Ingress Status
-kubectl get ingress fliegengitter-shop-ingress
+kubectl create secret generic medusa-publishable-key-prod \
+  -n arc-runners \
+  --from-literal=key="pk_xxxxx"
 ```
 
-### Pod beschreiben
+## CI/CD Workflow
+
+Push auf `dev` oder `main` Branch triggert automatisch:
+
+1. Version Tag berechnen (auto-increment)
+2. Frontend Docker Image bauen (mit env-spezifischer Medusa URL)
+3. Backend Docker Image bauen
+4. Images in Registry pushen
+5. `helm upgrade --install` ausfuehren
+6. Alte Registry Tags aufraeumen (behaelt letzte 10)
+
+## Helm Befehle
+
 ```bash
-kubectl describe pod fliegengitter-shop-xxxxx-xxxxx
+NS=diefliegengitterprofis
+
+# Status pruefen
+helm list -n $NS
+
+# Dev manuell deployen
+helm upgrade --install fliegengitter-dev ./helm/fliegengitter \
+  -n $NS -f helm/fliegengitter/values-dev.yaml \
+  --set frontend.image.tag=v2.3.0-dev \
+  --set backend.image.tag=v2.3.0
+
+# Prod manuell deployen
+helm upgrade --install fliegengitter-prod ./helm/fliegengitter \
+  -n $NS -f helm/fliegengitter/values-prod.yaml \
+  --set frontend.image.tag=v2.3.0-prod \
+  --set backend.image.tag=v2.3.0
+
+# Release loeschen
+helm uninstall fliegengitter-dev -n $NS
 ```
 
-### In Pod einsteigen
+## Monitoring & Debugging
+
 ```bash
-kubectl exec -it fliegengitter-shop-xxxxx-xxxxx -- sh
-```
+NS=diefliegengitterprofis
 
-## 🔄 Rollback
+# Pods anzeigen
+kubectl get pods -n $NS
 
-### Zu vorheriger Version
-```bash
-kubectl rollout undo deployment/fliegengitter-shop
-```
-
-### Zu spezifischer Revision
-```bash
-# Revision-Historie anzeigen
-kubectl rollout history deployment/fliegengitter-shop
-
-# Zu Revision zurück
-kubectl rollout undo deployment/fliegengitter-shop --to-revision=2
-```
-
-## 🚨 Troubleshooting
-
-### Image Pull Fehler
-```bash
-# Registry Login prüfen
-docker login registry.mobatix.de
-
-# Image manuell pullen
-docker pull registry.mobatix.de/fliegengitter-shop:latest
-```
-
-### Pod startet nicht
-```bash
-# Events prüfen
-kubectl get events --sort-by='.lastTimestamp'
-
-# Pod Logs
-kubectl logs fliegengitter-shop-xxxxx-xxxxx
+# Logs
+kubectl logs -l app=fliegengitter-shop-dev -n $NS -f
+kubectl logs -l app=medusa-backend-dev -n $NS -f
 
 # Pod beschreiben
-kubectl describe pod fliegengitter-shop-xxxxx-xxxxx
+kubectl describe pod <pod-name> -n $NS
+
+# In Pod einsteigen
+kubectl exec -it <pod-name> -n $NS -- sh
 ```
 
-### Deployment hängt
+## Rollback
+
 ```bash
-# Rollout Status
-kubectl rollout status deployment/fliegengitter-shop
+# Helm Rollback auf vorherige Revision
+helm rollback fliegengitter-dev -n diefliegengitterprofis
 
-# Deployment neu starten
-kubectl rollout restart deployment/fliegengitter-shop
+# Spezifische Revision
+helm history fliegengitter-dev -n diefliegengitterprofis
+helm rollback fliegengitter-dev 3 -n diefliegengitterprofis
 ```
 
-## 📈 Skalierung
+## From-Scratch Rebuild
 
-### Manuelle Skalierung
+Falls alles neu aufgesetzt werden muss:
+
 ```bash
-# Auf 3 Replicas skalieren
-kubectl scale deployment fliegengitter-shop --replicas=3
+# 1. Namespace loeschen (loescht alle Ressourcen)
+kubectl delete namespace diefliegengitterprofis
+
+# 2. DBs droppen (auf PostgreSQL Host)
+psql -U postgres -c "DROP DATABASE dfp_dev;"
+psql -U postgres -c "DROP DATABASE dfp_prod;"
+psql -U postgres -c "DROP USER dfp_dev_user;"
+psql -U postgres -c "DROP USER dfp_prod_user;"
+
+# 3. Setup-Script ausfuehren
+py -m scripts.setup-env --pg-root-user postgres --pg-root-pass <PW> --env dev
+py -m scripts.setup-env --pg-root-user postgres --pg-root-pass <PW> --env prod
+
+# 4. RBAC + ARC Runner
+kubectl apply -f k8s/arc/rbac.yaml
+
+# 5. Push auf dev/main Branch triggert Deployment
 ```
 
-### Auto-Scaling (HPA)
-```bash
-# HPA erstellen
-kubectl autoscale deployment fliegengitter-shop --cpu-percent=70 --min=2 --max=5
+## Dateistruktur
+
 ```
+helm/fliegengitter/          # Helm Chart
+  Chart.yaml
+  values.yaml                # Shared defaults
+  values-dev.yaml            # Dev overrides
+  values-prod.yaml           # Prod overrides
+  templates/                 # K8s resource templates
 
-## 🔐 Secrets Management
+scripts/
+  setup-env.py               # Einmaliges DB + Secrets Setup
 
-### Secrets erstellen
-```bash
-# Generic Secret
-kubectl create secret generic fliegengitter-secrets \
-  --from-literal=database-url=postgresql://... \
-  --from-literal=stripe-key=sk_...
+k8s/
+  arc/rbac.yaml              # ARC Runner RBAC
+  arc/runner-values.yaml     # ARC Runner Konfiguration
+  redis-deployment.yaml      # Shared Redis (default Namespace)
+
+.github/workflows/
+  deploy.yaml                # CI/CD Pipeline
 ```
-
-### Secrets in Deployment verwenden
-```yaml
-env:
-- name: DATABASE_URL
-  valueFrom:
-    secretKeyRef:
-      name: fliegengitter-secrets
-      key: database-url
-```
-
-## 📝 Deployment Checklist
-
-Vor jedem Deployment:
-
-- [ ] Code getestet
-- [ ] Build erfolgreich
-- [ ] Docker Image funktioniert lokal
-- [ ] Environment Variables konfiguriert
-- [ ] Secrets erstellt (falls nötig)
-- [ ] Backup erstellt (Production)
-- [ ] Team informiert
-
-Nach Deployment:
-
-- [ ] Health Check erfolgreich
-- [ ] Logs prüfen
-- [ ] Funktionalität testen
-- [ ] Performance prüfen
-- [ ] Monitoring aktiv
-
-## 🎯 Best Practices
-
-1. **Versionierung:** Immer mit Version-Tags deployen
-2. **Testing:** Erst auf dev, dann staging, dann production
-3. **Monitoring:** Logs und Metriken überwachen
-4. **Backups:** Vor Production-Deployments
-5. **Rollback-Plan:** Immer bereit zum Rollback
-6. **Documentation:** Änderungen dokumentieren
-
-## 📞 Support
-
-Bei Problemen:
-- Logs prüfen
-- Events prüfen
-- Team kontaktieren
-- Dokumentation konsultieren

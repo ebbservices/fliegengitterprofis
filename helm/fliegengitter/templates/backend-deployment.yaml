@@ -1,0 +1,64 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "fliegengitter.backend.name" . }}
+  labels:
+    {{- include "fliegengitter.labels" . | nindent 4 }}
+    {{- include "fliegengitter.backend.selectorLabels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.backend.replicaCount }}
+  strategy:
+    type: {{ .Values.backend.strategy }}
+  selector:
+    matchLabels:
+      {{- include "fliegengitter.backend.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "fliegengitter.backend.selectorLabels" . | nindent 8 }}
+        {{- include "fliegengitter.labels" . | nindent 8 }}
+    spec:
+      initContainers:
+        - name: fix-permissions
+          image: busybox
+          command: ["sh", "-c", "chown -R 1001:1001 /app/static"]
+          volumeMounts:
+            - name: uploads
+              mountPath: /app/static
+      containers:
+        - name: backend
+          image: "{{ .Values.backend.image.repository }}:{{ .Values.backend.image.tag }}"
+          imagePullPolicy: {{ .Values.backend.image.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.backend.port }}
+          envFrom:
+            - secretRef:
+                name: {{ .Values.backend.secretName }}
+          env:
+            {{- range $key, $val := .Values.backend.env }}
+            - name: {{ $key }}
+              value: {{ $val | quote }}
+            {{- end }}
+          volumeMounts:
+            - name: uploads
+              mountPath: /app/static
+          resources:
+            {{- toYaml .Values.backend.resources | nindent 12 }}
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.backend.livenessProbe.path }}
+              port: {{ .Values.backend.port }}
+            initialDelaySeconds: {{ .Values.backend.livenessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.backend.livenessProbe.periodSeconds }}
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.backend.readinessProbe.path }}
+              port: {{ .Values.backend.port }}
+            initialDelaySeconds: {{ .Values.backend.readinessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.backend.readinessProbe.periodSeconds }}
+      volumes:
+        - name: uploads
+          persistentVolumeClaim:
+            claimName: {{ include "fliegengitter.backend.name" . }}-uploads
+      imagePullSecrets:
+        {{- toYaml .Values.global.imagePullSecrets | nindent 8 }}

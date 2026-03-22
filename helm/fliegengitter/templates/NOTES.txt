@@ -1,0 +1,12 @@
+Fliegengitter Shop deployed successfully!
+
+Environment: {{ .Values.global.environment }}
+Namespace:   {{ .Release.Namespace }}
+
+Frontend:    https://{{ .Values.frontend.ingress.host }}
+Backend:     https://{{ .Values.backend.ingress.host }}
+Admin:       https://{{ .Values.backend.ingress.host }}/app
+
+Check status:
+  kubectl get pods -n {{ .Release.Namespace }} -l environment={{ .Values.global.environment }}
+  helm list -n {{ .Release.Namespace }}

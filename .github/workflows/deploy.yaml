@@ -2,15 +2,13 @@ name: Build and Deploy
 
 on:
   push:
-    branches: [main]
+    branches: [main, dev]
 
 env:
   REGISTRY: registry.mobatix.de
   FRONTEND_IMAGE: registry.mobatix.de/fliegengitter-shop
   BACKEND_IMAGE: registry.mobatix.de/medusa-backend
-  MEDUSA_BACKEND_URL: https://admin.diefliegengitterprofis.mobatix.de
-  MEDUSA_PUBLISHABLE_KEY: pk_7d7c40a9447f172851cac9face12b4d8c1078dce64cb97470dc4b585a1bc7074
-  K8S_NAMESPACE: default
+  K8S_NAMESPACE: diefliegengitterprofis
 
 jobs:
   build-and-deploy:
@@ -18,6 +16,24 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Set environment variables
+        id: env
+        run: |
+          BRANCH="${GITHUB_REF_NAME}"
+          if [ "$BRANCH" = "main" ]; then
+            echo "ENV=prod" >> $GITHUB_OUTPUT
+            echo "VALUES_FILE=helm/fliegengitter/values-prod.yaml" >> $GITHUB_OUTPUT
+            echo "MEDUSA_BACKEND_URL=https://admin.diefliegengitterprofis.de" >> $GITHUB_OUTPUT
+            echo "MEDUSA_PUBLISHABLE_KEY=${MEDUSA_PK_PROD}" >> $GITHUB_OUTPUT
+            echo "RELEASE_NAME=fliegengitter-prod" >> $GITHUB_OUTPUT
+          else
+            echo "ENV=dev" >> $GITHUB_OUTPUT
+            echo "VALUES_FILE=helm/fliegengitter/values-dev.yaml" >> $GITHUB_OUTPUT
+            echo "MEDUSA_BACKEND_URL=https://admin.dfp.mobatix.de" >> $GITHUB_OUTPUT
+            echo "MEDUSA_PUBLISHABLE_KEY=${MEDUSA_PK_DEV}" >> $GITHUB_OUTPUT
+            echo "RELEASE_NAME=fliegengitter-dev" >> $GITHUB_OUTPUT
+          fi
 
       - name: Calculate next version tag
         id: tag
@@ -46,12 +62,18 @@ jobs:
           echo "TAG=${NEXT}" >> $GITHUB_OUTPUT
           echo "Next version: ${NEXT}"
 
-      - name: Install kubectl
+      - name: Install kubectl and helm
         run: |
           curl -LO "https://dl.k8s.io/release/$(curl -sL https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
           chmod +x kubectl
+
+          curl -fsSL https://get.helm.sh/helm-v3.16.3-linux-amd64.tar.gz | tar xz
+          mv linux-amd64/helm .
+          chmod +x helm
+
           echo "${PWD}" >> $GITHUB_PATH
           ./kubectl version --client
+          ./helm version
 
       - name: Wait for Docker daemon
         run: |
@@ -65,38 +87,42 @@ jobs:
 
       - name: Build frontend image
         run: |
+          ENV="${{ steps.env.outputs.ENV }}"
+          TAG="${{ steps.tag.outputs.TAG }}"
           docker build \
-            --build-arg NEXT_PUBLIC_MEDUSA_BACKEND_URL=${{ env.MEDUSA_BACKEND_URL }} \
-            --build-arg NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY=${{ env.MEDUSA_PUBLISHABLE_KEY }} \
-            -t ${{ env.FRONTEND_IMAGE }}:${{ steps.tag.outputs.TAG }} \
+            --build-arg NEXT_PUBLIC_MEDUSA_BACKEND_URL=${{ steps.env.outputs.MEDUSA_BACKEND_URL }} \
+            --build-arg NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY=${{ steps.env.outputs.MEDUSA_PUBLISHABLE_KEY }} \
+            -t ${{ env.FRONTEND_IMAGE }}:${TAG}-${ENV} \
             -f Dockerfile .
 
       - name: Build backend image
         run: |
+          TAG="${{ steps.tag.outputs.TAG }}"
           docker build \
-            -t ${{ env.BACKEND_IMAGE }}:${{ steps.tag.outputs.TAG }} \
+            -t ${{ env.BACKEND_IMAGE }}:${TAG} \
             -f backend/Dockerfile backend/
 
       - name: Push images
         run: |
-          docker push ${{ env.FRONTEND_IMAGE }}:${{ steps.tag.outputs.TAG }}
-          docker push ${{ env.BACKEND_IMAGE }}:${{ steps.tag.outputs.TAG }}
+          TAG="${{ steps.tag.outputs.TAG }}"
+          ENV="${{ steps.env.outputs.ENV }}"
+          docker push ${{ env.FRONTEND_IMAGE }}:${TAG}-${ENV}
+          docker push ${{ env.BACKEND_IMAGE }}:${TAG}
 
-      - name: Deploy to Kubernetes
+      - name: Deploy with Helm
         run: |
           TAG="${{ steps.tag.outputs.TAG }}"
-          NS="${{ env.K8S_NAMESPACE }}"
+          ENV="${{ steps.env.outputs.ENV }}"
+          RELEASE="${{ steps.env.outputs.RELEASE_NAME }}"
+          VALUES="${{ steps.env.outputs.VALUES_FILE }}"
 
-          echo "Deploying ${TAG}..."
-          kubectl set image deployment/fliegengitter-shop \
-            fliegengitter-shop=${{ env.FRONTEND_IMAGE }}:${TAG} -n ${NS}
-          kubectl set image deployment/medusa-backend \
-            medusa-backend=${{ env.BACKEND_IMAGE }}:${TAG} -n ${NS}
-
-      - name: Wait for rollout
-        run: |
-          kubectl rollout status deployment/fliegengitter-shop -n ${{ env.K8S_NAMESPACE }} --timeout=300s
-          kubectl rollout status deployment/medusa-backend -n ${{ env.K8S_NAMESPACE }} --timeout=300s
+          helm upgrade --install "${RELEASE}" ./helm/fliegengitter \
+            -n ${{ env.K8S_NAMESPACE }} --create-namespace \
+            -f "${VALUES}" \
+            --set frontend.image.tag="${TAG}-${ENV}" \
+            --set backend.image.tag="${TAG}" \
+            --wait \
+            --timeout 5m
 
       - name: Cleanup old registry tags (keep latest 10)
         if: success()
@@ -140,6 +166,7 @@ jobs:
       - name: Deployment status
         if: always()
         run: |
-          echo "=== Deployed version: ${{ steps.tag.outputs.TAG }} ==="
+          echo "=== Deployed ${{ steps.env.outputs.ENV }}: ${{ steps.tag.outputs.TAG }} ==="
           kubectl get pods -n ${{ env.K8S_NAMESPACE }} 2>/dev/null || echo "kubectl not available"
           kubectl get deployments -n ${{ env.K8S_NAMESPACE }} 2>/dev/null || true
+          kubectl get ingress -n ${{ env.K8S_NAMESPACE }} 2>/dev/null || true
