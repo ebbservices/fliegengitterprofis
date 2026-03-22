@@ -12,7 +12,7 @@ ENV DATABASE_URL=postgres://localhost/fake \
     AUTH_CORS=http://localhost \
     JWT_SECRET=build-placeholder \
     COOKIE_SECRET=build-placeholder
-RUN npm run build
+RUN npm run build && mkdir -p .medusa/server/public
 
 # Production
 FROM node:20-alpine AS runner
