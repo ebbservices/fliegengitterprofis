@@ -39,9 +39,18 @@ module.exports = defineConfig({
     },
     {
       key: "locking",
-      resolve: "@medusajs/locking-redis",
+      resolve: "@medusajs/locking",
       options: {
-        redisUrl: process.env.REDIS_URL,
+        providers: [
+          {
+            resolve: "@medusajs/locking-redis",
+            id: "redis",
+            is_default: true,
+            options: {
+              redisUrl: process.env.REDIS_URL,
+            },
+          },
+        ],
       },
     },
     ...(process.env.STRIPE_API_KEY ? [{
