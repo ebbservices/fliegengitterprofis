@@ -11,7 +11,7 @@ metadata:
   namespace: diefliegengitterprofis
 rules:
   - apiGroups: ["apps"]
-    resources: ["deployments"]
+    resources: ["deployments", "replicasets"]
     verbs: ["get", "list", "create", "patch", "update", "delete"]
   - apiGroups: [""]
     resources: ["services", "pods", "persistentvolumeclaims", "secrets", "configmaps"]
