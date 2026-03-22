@@ -86,6 +86,9 @@ jobs:
             sleep 1
           done
 
+      - name: Docker cleanup (free disk space)
+        run: docker system prune -af --volumes 2>/dev/null || true
+
       - name: Docker login
         run: echo "${REGISTRY_PASSWORD}" | docker login registry.mobatix.de -u admin --password-stdin
 
