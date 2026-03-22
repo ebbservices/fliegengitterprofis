@@ -31,12 +31,14 @@ module.exports = defineConfig({
       },
     },
     {
+      key: "event_bus",
       resolve: "@medusajs/event-bus-redis",
       options: {
         redisUrl: process.env.REDIS_URL,
       },
     },
     {
+      key: "locking",
       resolve: "@medusajs/locking-redis",
       options: {
         redisUrl: process.env.REDIS_URL,
